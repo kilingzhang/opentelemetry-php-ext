@@ -35,3 +35,4 @@ tests/*/*.sh
 cmake-build-debug
 .idea
 opentelemetry
+.gdbinit
