@@ -9,7 +9,7 @@
 #include <grpc/support/log.h>
 #include <grpc/grpc.h>
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
-#include "opentelemetry/proto/collector/trace/v1/trace_service_grpc.pb.h"
+#include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
 class OtelExporter {
  private:

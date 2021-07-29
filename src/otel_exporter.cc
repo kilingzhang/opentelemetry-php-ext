@@ -10,7 +10,7 @@
 #include <grpc/support/log.h>
 
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
-#include "opentelemetry/proto/collector/trace/v1/trace_service_grpc.pb.h"
+#include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
 using namespace opentelemetry::proto::collector::trace::v1;
 
