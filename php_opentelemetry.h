@@ -31,7 +31,6 @@
 
 #include "include/provider.h"
 #include  <string>
-#include  <map>
 
 OPENTELEMETRY_BEGIN_EXTERN_C()
 
@@ -54,7 +53,7 @@ OPENTELEMETRY_BEGIN_EXTERN_C()
 #include "zend_smart_str.h"
 #include "Zend/zend_smart_str.h"
 #include "Zend/zend_builtin_functions.h"
-#include "Zend/zend_exceptions.h"
+#include "zend_exceptions.h"
 
 #include <curl/curl.h>
 #include "ext/standard/url.h"
@@ -86,7 +85,7 @@ extern zend_module_entry opentelemetry_module_entry;
 #define PHP_OPENTELEMETRY_SERVICE_NAME_KEY "SERVICE_NAME"
 #define PHP_OPENTELEMETRY_LOG_PATH "/var/log/opentelemetry"
 #define PHP_OPENTELEMETRY_UNIX_SOCKET "/var/run/opentelemetry-agent.sock"
-#define PHP_OPENTELEMETRY_GRPC "127.0.0.1:4317"
+#define PHP_OPENTELEMETRY_GRPC_ENDPOINT "127.0.0.1:4317"
 #define PHP_OPENTELEMETRY_ENVIRONMENT "staging"
 #define PHP_OPENTELEMETRY_ERROR_LEVEL "E_ERROR"
 #define PHP_IS_DEBUG OPENTELEMETRY_DEBUG
@@ -126,6 +125,18 @@ extern zend_module_entry opentelemetry_module_entry;
 #define COMPONENTS_REDIS  "redis"
 #define COMPONENTS_MEMCACHED  "memcached"
 
+#if (defined(unix) || defined(__unix__) || defined(__unix)) && !defined(__APPLE__)
+#define PLATFORM_NAME "unix"
+#elif defined(__linux__)
+#define PLATFORM_NAME "linux"
+#elif defined(__APPLE__) && defined(__MACH__)
+#define PLATFORM_NAME "darwin"
+#elif defined(__FreeBSD__)
+#define PLATFORM_NAME "freebsd"
+#else
+#define PLATFORM_NAME ""
+#endif
+
 #ifdef ZEND_ENABLE_ZVAL_LONG64
 #define PRId3264 PRId64
 #else
@@ -133,11 +144,11 @@ extern zend_module_entry opentelemetry_module_entry;
 #endif
 
 #ifdef PHP_WIN32
-#	define PHP_OPENTELEMETRY_API __declspec(dllexport)
+#define PHP_OPENTELEMETRY_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
-#	define PHP_OPENTELEMETRY_API __attribute__ ((visibility("default")))
+#define PHP_OPENTELEMETRY_API __attribute__ ((visibility("default")))
 #else
-#	define PHP_OPENTELEMETRY_API
+#define PHP_OPENTELEMETRY_API
 #endif
 
 #ifdef ZTS
@@ -148,6 +159,8 @@ OPENTELEMETRY_END_EXTERN_C()
 
 ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   bool enable;
+  bool cli_enable;
+  bool debug;
   bool enable_exception;
   bool enable_error;
   bool enable_curl;
@@ -155,25 +168,20 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   bool enable_redis;
   bool enable_mysql;
   bool enable_yar;
-  bool debug;
-  bool cli_enable;
-  bool is_started_cli_tracer;
-  int current_context_flag;
-  char *unix_socket;
-  char *grpc;
-  int grpc_export_nums;
   char *environment;
-  char *log_path;
   char *service_name;
   char *service_name_key;
   char *error_level;
   int sample_ratio_based;
-  int max_time_consuming;
+  char *unix_socket;
+  char *log_path;
+  char *grpc_endpoint;
+  int grpc_max_message_size;
   int grpc_timeout_milliseconds;
-  Provider *provider = nullptr;
+  Provider *provider;
   std::string ipv4;
   zval curl_header;
-  tsl::robin_map<std::string, zval *> curlHeaders;
+  bool is_started_cli_tracer;
 ZEND_END_MODULE_GLOBALS(opentelemetry)
 ZEND_EXTERN_MODULE_GLOBALS(opentelemetry)
 

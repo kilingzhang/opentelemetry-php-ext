@@ -2,18 +2,20 @@
 // Created by kilingzhang on 2021/6/24.
 //
 
-#include "zend_hook_exception.h"
 #include "php_opentelemetry.h"
-#include "Zend/zend_exceptions.h"
+#include "include/zend_hook_exception.h"
+#include "include/utils.h"
+#include "zend_exceptions.h"
 #include "zend_compile.h"
 #include "zend_types.h"
-#include "utils.h"
 
 #ifdef HAVE_DTRACE
-
 #include <zend_dtrace_gen.h>
-
 #endif /* HAVE_DTRACE */
+
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
 
 #if PHP_VERSION_ID < 80000
 

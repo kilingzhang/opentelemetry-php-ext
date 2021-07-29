@@ -7,20 +7,17 @@
 #include "include/core.h"
 #include "include/zend_hook.h"
 #include "include/utils.h"
+
+#include <thread>
 #include <string>
 
 #include <grpc/support/log.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/create_channel.h>
-#include <thread>
 
 #include <boost/interprocess/ipc/message_queue.hpp>
-#include <iostream>
-#include <vector>
 
 using namespace boost::interprocess;
-using namespace opentelemetry::proto::trace::v1;
-using opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest;
 
 void exporterOpentelemetry() {
 
@@ -34,8 +31,15 @@ void exporterOpentelemetry() {
         "opentelemetry"
     );
 
+    int msg_length = static_cast<int>(msg.size());
+    int max_length = OPENTELEMETRY_G(grpc_max_message_size);
+    if (msg_length > max_length) {
+      log("message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length) + " pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
+      return;
+    }
+
     auto rtn = mq.try_send(msg.data(), msg.size(), 0);
-    log("send : " + std::to_string(rtn));
+    log("send : " + std::to_string(rtn) + " pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
   } catch (interprocess_exception &ex) {
     log("flush message_queue ex : " + std::string(ex.what()));
   }
@@ -43,6 +47,13 @@ void exporterOpentelemetry() {
 }
 
 [[noreturn]] void consumer() {
+
+  grpc::ChannelArguments args;
+  args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
+  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 1000);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000);
+  auto otelExporter = new OtelExporter(grpc::CreateCustomChannel(
+      OPENTELEMETRY_G(grpc_endpoint), grpc::InsecureChannelCredentials(), args));
 
   while (true) {
 
@@ -55,32 +66,15 @@ void exporterOpentelemetry() {
           );
 
       std::string data;
-      data.resize(100000);
+      data.resize(OPENTELEMETRY_G(grpc_max_message_size));
       size_t msg_size;
       unsigned msg_priority;
       mq.receive(&data[0], data.size(), msg_size, msg_priority);
       if (!data.empty()) {
-
         data.resize(msg_size);
-        auto request = new ExportTraceServiceRequest();
+        auto request = new opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest();
         request->ParseFromString(data);
-
-        log("consumer  request trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()) + " pid:" + std::to_string(getpid()));
-
-        grpc::ChannelArguments args;
-        args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
-        args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 1000);
-        args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000);
-        auto otelExporter = new OtelExporter(grpc::CreateCustomChannel(
-            OPENTELEMETRY_G(grpc), grpc::InsecureChannelCredentials(), args));
-        if (otelExporter) {
-          otelExporter->sendTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
-        } else {
-          log("otelExporter none");
-        }
-
-      } else {
-        log("receive none");
+        otelExporter->sendTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
       }
 
     } catch (interprocess_exception &ex) {
@@ -90,6 +84,7 @@ void exporterOpentelemetry() {
 }
 
 void opentelemetry_module_init() {
+
   if (!is_enabled()) {
     return;
   }
@@ -102,12 +97,13 @@ void opentelemetry_module_init() {
   OPENTELEMETRY_G(ipv4) = get_current_machine_ip(DEFAULT_ETH_INF);
 
   try {
+    message_queue::remove("opentelemetry");
     //Erase previous message queue
     message_queue(
         boost::interprocess::open_or_create,
         "opentelemetry",
         1024,
-        100000,
+        OPENTELEMETRY_G(grpc_max_message_size),
         boost::interprocess::permissions(0666)
     );
   } catch (interprocess_exception &ex) {
@@ -132,7 +128,7 @@ void opentelemetry_request_init() {
   if (!is_enabled()) {
     return;
   }
-  start_tracer("", "", Span_SpanKind::Span_SpanKind_SPAN_KIND_SERVER);
+  start_tracer("", "", opentelemetry::proto::trace::v1::Span_SpanKind::Span_SpanKind_SPAN_KIND_SERVER);
 }
 
 void opentelemetry_request_shutdown() {
@@ -142,7 +138,7 @@ void opentelemetry_request_shutdown() {
   shutdown_tracer();
 }
 
-void start_tracer(std::string traceparent, std::string tracestate, Span_SpanKind kind) {
+void start_tracer(std::string traceparent, std::string tracestate, opentelemetry::proto::trace::v1::Span_SpanKind kind) {
   if ((is_cli_sapi() && !is_cli_enabled()) || (is_cli_sapi() && is_cli_enabled() && !is_started_cli_tracer())) {
     return;
   }

@@ -6,19 +6,21 @@
 #define OPENTELEMETRY_UTILS_H
 
 #include "php_opentelemetry.h"
-#include <string>
-#include <arpa/inet.h>
 #include "zend_types.h"
 #include "zend_smart_str.h"
 #include "Zend/zend_smart_str.h"
-#include <opentelemetry/proto/common/v1/common.pb.h>
-#include <opentelemetry/proto/trace/v1/trace.pb.h>
+
+#include <string>
+#include <arpa/inet.h>
+
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include "opentelemetry/proto/common/v1/common.pb.h"
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
 
-using namespace opentelemetry::proto::common::v1;
 using namespace opentelemetry::proto::trace::v1;
+using namespace opentelemetry::proto::common::v1;
 
 /**
  *
@@ -111,7 +113,6 @@ boost::uuids::uuid generate_span_id();
  * @return
  */
 std::string to_hex(char *ch, int size);
-
 
 /**
  *

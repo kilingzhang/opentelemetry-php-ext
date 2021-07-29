@@ -2,10 +2,14 @@
 // Created by kilingzhang on 2021/6/24.
 //
 
-#include "zend_hook_redis.h"
 #include "php_opentelemetry.h"
+#include "include/zend_hook_redis.h"
+#include "include/utils.h"
 #include "zend_types.h"
-#include "utils.h"
+
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
 
 std::vector<std::string> redisKeysCommands;
 

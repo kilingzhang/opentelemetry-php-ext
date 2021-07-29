@@ -2,10 +2,14 @@
 // Created by kilingzhang on 2021/7/10.
 //
 
-#include "zend_hook_yar.h"
 #include "php_opentelemetry.h"
+#include "include/zend_hook_yar.h"
+#include "include/utils.h"
 #include "zend_types.h"
-#include "utils.h"
+
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
 
 std::vector<std::string> clientKeysCommands;
 std::vector<std::string> serverKeysCommands;

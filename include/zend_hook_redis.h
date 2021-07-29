@@ -8,6 +8,8 @@
 #include "php_opentelemetry.h"
 #include "zend_types.h"
 
+#include "tsl/robin_map.h"
+
 static tsl::robin_map<std::string, void (*)(INTERNAL_FUNCTION_PARAMETERS)> opentelemetry_redis_original_handler_map;
 static tsl::robin_map<std::string, void (*)(INTERNAL_FUNCTION_PARAMETERS)> opentelemetry_rediscluster_original_handler_map;
 

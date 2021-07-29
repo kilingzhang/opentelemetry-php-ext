@@ -7,13 +7,10 @@
 
 #include <string>
 #include <iostream>
-#include <opentelemetry/proto/common/v1/common.pb.h>
-#include <opentelemetry/proto/trace/v1/trace.pb.h>
 #include "tsl/robin_map.h"
+#include "opentelemetry/proto/common/v1/common.pb.h"
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
-
-using namespace opentelemetry::proto::collector::trace::v1;
-using namespace opentelemetry::proto::trace::v1;
 
 class Provider {
  public:
@@ -21,29 +18,28 @@ class Provider {
 
   ~Provider();
 
-  ExportTraceServiceRequest *getRequest();
+  opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *getRequest();
 
-  ResourceSpans *getTracer();
+  opentelemetry::proto::trace::v1::ResourceSpans *getTracer();
 
-  Span *createFirstSpan(const std::string &name, Span_SpanKind kind);
+  opentelemetry::proto::trace::v1::Span *createFirstSpan(const std::string &name, opentelemetry::proto::trace::v1::Span_SpanKind kind);
 
-  Span *createSpan(const std::string &name, Span_SpanKind kind);
+  opentelemetry::proto::trace::v1::Span *createSpan(const std::string &name, opentelemetry::proto::trace::v1::Span_SpanKind kind);
 
-  Span *firstOneSpan();
+  opentelemetry::proto::trace::v1::Span *firstOneSpan();
 
-  Span latestSpan();
+  opentelemetry::proto::trace::v1::Span latestSpan();
 
   void clean();
-
   void parseTraceParent(const std::string &traceparent);
   void parseTraceState(const std::string &tracestate);
  private:
-  ResourceSpans *resourceSpan = nullptr;
-  tsl::robin_map<pid_t, ResourceSpans *> resourceSpans;
-  ExportTraceServiceRequest *request = nullptr;
-  tsl::robin_map<pid_t, ExportTraceServiceRequest *> requests;
-  Span *firstSpan = nullptr;
-  tsl::robin_map<pid_t, Span *> firstSpans;
+  opentelemetry::proto::trace::v1::ResourceSpans *resourceSpan = nullptr;
+  tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::ResourceSpans *> resourceSpans;
+  opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request = nullptr;
+  tsl::robin_map<pid_t, opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *> requests;
+  opentelemetry::proto::trace::v1::Span *firstSpan = nullptr;
+  tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::Span *> firstSpans;
 };
 
 #endif //OPENTELEMETRY_TRACING_H

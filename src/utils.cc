@@ -2,13 +2,11 @@
 // Created by kilingzhang on 2021/6/15.
 //
 
-#include "include/utils.h"
 #include "php_opentelemetry.h"
+#include "include/utils.h"
 #include "zend_types.h"
 #include "zend_smart_str.h"
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/uuid_generators.hpp>
+
 #include <net/if.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
@@ -19,10 +17,18 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <chrono>
-#include "tsl/robin_map.h"
 #include <fstream>
 #include <iostream>
 #include <array>
+
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include "opentelemetry/proto/common/v1/common.pb.h"
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
+using namespace opentelemetry::proto::common::v1;
 
 void log(const std::string &message) {
   std::string file =

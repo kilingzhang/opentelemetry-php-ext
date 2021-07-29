@@ -2,12 +2,17 @@
 // Created by kilingzhang on 2021/6/24.
 //
 
-#include "zend_hook_curl.h"
-#include "zend_types.h"
-#include <curl/curl.h>
-#include <ext/standard/url.h>
 #include "php_opentelemetry.h"
-#include "utils.h"
+#include "include/zend_hook_curl.h"
+#include "include/utils.h"
+#include "zend_types.h"
+#include <ext/standard/url.h>
+
+#include <curl/curl.h>
+
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
 
 #if PHP_VERSION_ID >= 80000
 #include "ext/curl/php_curl.h"

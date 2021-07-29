@@ -2,11 +2,15 @@
 // Created by kilingzhang on 2021/7/10.
 //
 
-#include "zend_hook_mysqli.h"
 #include "php_opentelemetry.h"
+#include "include/zend_hook_mysqli.h"
+#include "include/utils.h"
 #include "zend_types.h"
-#include "utils.h"
 #include "ext/pdo/php_pdo_driver.h"
+
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
 
 #ifdef MYSQLI_USE_MYSQLND
 

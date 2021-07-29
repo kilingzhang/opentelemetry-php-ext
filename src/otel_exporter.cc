@@ -2,18 +2,22 @@
 // Created by kilingzhang on 2021/7/23.
 //
 
-#include "otel_exporter.h"
-#include "utils.h"
+#include "include/otel_exporter.h"
+#include "include/utils.h"
+
 #include <string>
+
 #include <grpc/support/log.h>
-#include <grpc/grpc.h>
+
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 #include "opentelemetry/proto/collector/trace/v1/trace_service_grpc.pb.h"
 
-OtelExporter::OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channel)
-    : stub_(opentelemetry::proto::collector::trace::v1::TraceService::NewStub(channel)) {}
+using namespace opentelemetry::proto::collector::trace::v1;
 
-void OtelExporter::sendAsyncTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request, long long int milliseconds) {
+OtelExporter::OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channel)
+    : stub_(TraceService::NewStub(channel)) {}
+
+void OtelExporter::sendAsyncTracer(ExportTraceServiceRequest *request, long long int milliseconds) {
 
   log("request resource_spans trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()) + " pid:" + std::to_string(getpid()));
 
@@ -42,25 +46,26 @@ void OtelExporter::sendAsyncTracer(opentelemetry::proto::collector::trace::v1::E
 
 }
 
-void OtelExporter::sendTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request, long long int milliseconds) {
+void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int milliseconds) {
 
   grpc::ClientContext context;
-  std::chrono::system_clock::time_point deadline = std::chrono::system_clock::now() +
-      std::chrono::milliseconds(milliseconds);
-  context.set_deadline(deadline);
+
+  if (milliseconds > 0) {
+    std::chrono::system_clock::time_point deadline = std::chrono::system_clock::now() +
+        std::chrono::milliseconds(milliseconds);
+    context.set_deadline(deadline);
+  }
 
   ExportTraceServiceResponse response;
-
-  log("request resource_spans trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()) + " pid:" + std::to_string(getpid()));
 
   grpc::Status status = stub_->Export(&context, *request, &response);
 
   if (!status.ok()) {
-    log("[OTLP Exporter] Export() failed: " + status.error_message() + "pid:" + std::to_string(getpid()));
+    log("[OTLP Exporter] Export() failed: " + status.error_message() + " pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
     return;
   }
 
-  log("[OTLP Exporter] Export() success pid:" + std::to_string(getpid()));
+  log("[OTLP Exporter] Export() success. pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
 }
 
 // Loop while listening for completed responses.
@@ -84,7 +89,7 @@ void OtelExporter::AsyncCompleteRpc() {
       // corresponds solely to the request for updates introduced by Finish().
       GPR_ASSERT(ok);
 
-      if (call->status.ok()) {
+      if (!call->status.ok()) {
         log("[OTLP Exporter] Export() success pid:" + std::to_string(getpid()));
       } else {
         log("[opentelemetry] [OTLP Exporter] Export() failed: " + call->status.error_message() + " pid:" + std::to_string(getpid()));
@@ -93,7 +98,6 @@ void OtelExporter::AsyncCompleteRpc() {
       delete call;
 
     } else if (ret == grpc::CompletionQueue::TIMEOUT) {
-//          log("[opentelemetry] [OTLP Exporter] Export() exit pid:" + std::to_string(getpid()));
       log("[opentelemetry] [OTLP Exporter] Export() timeout pid:" + std::to_string(getpid()));
     } else {
       log("[opentelemetry] [OTLP Exporter] Export() unknow pid:" + std::to_string(getpid()));

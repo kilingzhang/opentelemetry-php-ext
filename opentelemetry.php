@@ -12,18 +12,21 @@ foreach ($functions as $func) {
 }
 echo "$br\n";
 
-$n = 10;
+$n = 5;
 while($n--){
+echo 'before memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n";
 opentelemetry_start_cli_tracer();
-echo $n , "\n";
 try{
-$redis = new Redis();
-$redis->connect('127.0.0.1');
-$redis->set("opentelemetry","opentelemetry");
-$redis->get("opentelemetry");
+    $redis = new Redis();
+    $redis->connect('127.0.0.1');
+    $redis->set("opentelemetry","opentelemetry");
+    $redis->get("opentelemetry");
+    unset($redis);
 }catch(Exception $e){
 }
+echo 'ing memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n";
 opentelemetry_shutdown_cli_tracer();
+echo 'after memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n\n";
 }
 
 sleep(5);

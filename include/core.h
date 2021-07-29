@@ -6,11 +6,6 @@
 #define OPENTELEMETRY_CORE_H
 
 #include "php_opentelemetry.h"
-#include "include/utils.h"
-#include "provider.h"
-#include "string"
-
-using namespace opentelemetry::proto::trace::v1;
 
 /**
  *
@@ -46,7 +41,7 @@ void opentelemetry_request_shutdown();
 /**
  *
  */
-void start_tracer(std::string traceparent, std::string tracestate, Span_SpanKind kind);
+void start_tracer(std::string traceparent, std::string tracestate, opentelemetry::proto::trace::v1::Span_SpanKind kind);
 
 /**
  *

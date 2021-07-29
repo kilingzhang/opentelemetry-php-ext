@@ -2,11 +2,16 @@
 // Created by kilingzhang on 2021/6/16.
 //
 
-#include <random>
-#include "include/sdk.h"
-#include "include/core.h"
-#include "include/utils.h"
 #include "php_opentelemetry.h"
+#include "include/sdk.h"
+#include "include/utils.h"
+#include "include/core.h"
+
+#include <random>
+
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
 
 /**
  *

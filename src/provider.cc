@@ -2,28 +2,18 @@
 // Created by kilingzhang on 2021/6/15.
 //
 
+#include "php_opentelemetry.h"
 #include "include/provider.h"
+#include "include/utils.h"
+
 #include <utility>
 #include <random>
-#include "include/utils.h"
-#include "php_opentelemetry.h"
-#include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 #include <unistd.h>
 
-#if (defined(unix) || defined(__unix__) || defined(__unix)) && !defined(__APPLE__)
-#define PLATFORM_NAME "unix"
-#elif defined(__linux__)
-#define PLATFORM_NAME "linux"
-#elif defined(__APPLE__) && defined(__MACH__)
-#define PLATFORM_NAME "darwin"
-#elif defined(__FreeBSD__)
-#define PLATFORM_NAME "freebsd"
-#else
-#define PLATFORM_NAME ""
-#endif
+#include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 
+using namespace opentelemetry::proto::trace::v1;
 using namespace opentelemetry::proto::collector::trace::v1;
-using namespace opentelemetry::proto::common::v1;
 
 Provider::Provider() = default;
 Provider::~Provider() = default;

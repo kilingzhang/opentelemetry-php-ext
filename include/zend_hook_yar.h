@@ -8,7 +8,9 @@
 #include "php_opentelemetry.h"
 #include "zend_types.h"
 
-#define YAR_OPT_HEADER	(1<<4)
+#include "tsl/robin_map.h"
+
+#define YAR_OPT_HEADER    (1<<4)
 static tsl::robin_map<std::string, void (*)(INTERNAL_FUNCTION_PARAMETERS)> opentelemetry_yar_client_original_handler_map;
 static tsl::robin_map<std::string, void (*)(INTERNAL_FUNCTION_PARAMETERS)> opentelemetry_yar_server_original_handler_map;
 

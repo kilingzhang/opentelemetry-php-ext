@@ -5,7 +5,6 @@
 #ifndef OPENTELEMETRY_SDK_H
 #define OPENTELEMETRY_SDK_H
 
-#include "utils.h"
 #include "php_opentelemetry.h"
 
 PHP_FUNCTION (opentelemetry_start_cli_tracer);

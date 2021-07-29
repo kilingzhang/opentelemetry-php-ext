@@ -17,81 +17,39 @@
 */
 
 #include "php_opentelemetry.h"
-//extend
 #include "include/core.h"
 #include "include/sdk.h"
 extern "C" { void *__dso_handle = 0; }
+
 ZEND_DECLARE_MODULE_GLOBALS(opentelemetry)
 PHP_INI_BEGIN()
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.enable", "0", PHP_INI_ALL, OnUpdateBool, enable, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.enable_exception", "0", PHP_INI_ALL, OnUpdateBool, enable_exception,
-         zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.enable_error", "0", PHP_INI_ALL, OnUpdateBool, enable_error, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.enable_curl", "0", PHP_INI_ALL, OnUpdateBool, enable_curl, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.enable_memcached", "0", PHP_INI_ALL, OnUpdateBool, enable_memcached,
-         zend_opentelemetry_globals,
-         opentelemetry_globals) STD_PHP_INI_ENTRY
-        ("opentelemetry.enable_redis", "0", PHP_INI_ALL, OnUpdateBool, enable_redis, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.enable_mysql", "0", PHP_INI_ALL, OnUpdateBool, enable_mysql, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.enable_yar", "0", PHP_INI_ALL, OnUpdateBool, enable_yar, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.debug", "0", PHP_INI_ALL, OnUpdateBool, debug, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.cli_enable", "0", PHP_INI_ALL, OnUpdateBool, cli_enable, zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.sample_ratio_based", "1", PHP_INI_ALL, OnUpdateLong, sample_ratio_based,
-         zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.max_time_consuming", "1000", PHP_INI_ALL, OnUpdateLong, max_time_consuming,
-         zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.service_name", PHP_OPENTELEMETRY_SERVICE_NAME, PHP_INI_ALL, OnUpdateString,
-         service_name, zend_opentelemetry_globals, opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.error_level", PHP_OPENTELEMETRY_ERROR_LEVEL, PHP_INI_ALL, OnUpdateString,
-         error_level, zend_opentelemetry_globals, opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.service_name_key", PHP_OPENTELEMETRY_SERVICE_NAME_KEY, PHP_INI_ALL, OnUpdateString,
-         service_name_key, zend_opentelemetry_globals, opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.log_path", PHP_OPENTELEMETRY_LOG_PATH, PHP_INI_ALL, OnUpdateString,
-         log_path, zend_opentelemetry_globals, opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.unix_socket", PHP_OPENTELEMETRY_UNIX_SOCKET, PHP_INI_ALL, OnUpdateString, unix_socket,
-         zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.grpc", PHP_OPENTELEMETRY_GRPC, PHP_INI_ALL, OnUpdateString, grpc,
-         zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.grpc_timeout_milliseconds", "100", PHP_INI_ALL, OnUpdateLong, grpc_timeout_milliseconds,
-         zend_opentelemetry_globals,
-         opentelemetry_globals)
-        STD_PHP_INI_ENTRY
-        ("opentelemetry.environment", PHP_OPENTELEMETRY_ENVIRONMENT, PHP_INI_ALL, OnUpdateString, environment,
-         zend_opentelemetry_globals,
-         opentelemetry_globals)
-
+        STD_PHP_INI_ENTRY("opentelemetry.service_name", PHP_OPENTELEMETRY_SERVICE_NAME, PHP_INI_ALL, OnUpdateString, service_name, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.service_name_key", PHP_OPENTELEMETRY_SERVICE_NAME_KEY, PHP_INI_ALL, OnUpdateString, service_name_key, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable", "0", PHP_INI_PERDIR, OnUpdateBool, enable, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable_exception", "0", PHP_INI_PERDIR, OnUpdateBool, enable_exception, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable_error", "0", PHP_INI_PERDIR, OnUpdateBool, enable_error, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable_curl", "0", PHP_INI_PERDIR, OnUpdateBool, enable_curl, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable_memcached", "0", PHP_INI_PERDIR, OnUpdateBool, enable_memcached, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable_redis", "0", PHP_INI_PERDIR, OnUpdateBool, enable_redis, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable_mysql", "0", PHP_INI_PERDIR, OnUpdateBool, enable_mysql, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.enable_yar", "0", PHP_INI_PERDIR, OnUpdateBool, enable_yar, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.debug", "0", PHP_INI_PERDIR, OnUpdateBool, debug, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.cli_enable", "0", PHP_INI_PERDIR, OnUpdateBool, cli_enable, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.sample_ratio_based", "1", PHP_INI_PERDIR, OnUpdateLong, sample_ratio_based, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.error_level", PHP_OPENTELEMETRY_ERROR_LEVEL, PHP_INI_PERDIR, OnUpdateString, error_level, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.log_path", PHP_OPENTELEMETRY_LOG_PATH, PHP_INI_PERDIR, OnUpdateString, log_path, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.unix_socket", PHP_OPENTELEMETRY_UNIX_SOCKET, PHP_INI_PERDIR, OnUpdateString, unix_socket, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.grpc_endpoint", PHP_OPENTELEMETRY_GRPC_ENDPOINT, PHP_INI_PERDIR, OnUpdateString, grpc_endpoint, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.grpc_max_message_size", "102400", PHP_INI_PERDIR, OnUpdateLong, grpc_max_message_size, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.grpc_timeout_milliseconds", "100", PHP_INI_PERDIR, OnUpdateLong, grpc_timeout_milliseconds, zend_opentelemetry_globals, opentelemetry_globals)
+        STD_PHP_INI_ENTRY("opentelemetry.environment", PHP_OPENTELEMETRY_ENVIRONMENT, PHP_INI_PERDIR, OnUpdateString, environment, zend_opentelemetry_globals, opentelemetry_globals)
 PHP_INI_END()
+
+
+//static void php_opentelemetry_init_globals(zend_opentelemetry_globals *opentelemetry_globals) {
+//  opentelemetry_globals->grpc_timeout_milliseconds = 100;
+//  opentelemetry_globals->grpc_max_message_size = 102400;
+//}
 
 PHP_MINIT_FUNCTION (opentelemetry) {
   REGISTER_INI_ENTRIES();

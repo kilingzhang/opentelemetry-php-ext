@@ -2,13 +2,18 @@
 // Created by kilingzhang on 2021/7/10.
 //
 
-#include "zend_hook_pdo.h"
 #include "php_opentelemetry.h"
+#include "include/zend_hook_pdo.h"
+#include "include/utils.h"
 #include "zend_types.h"
 #include "ext/pdo/php_pdo_driver.h"
-#include "utils.h"
+
 #include <regex>
 #include <cstdlib>
+
+#include "opentelemetry/proto/trace/v1/trace.pb.h"
+
+using namespace opentelemetry::proto::trace::v1;
 
 std::vector<std::string> pdoKeysCommands;
 
