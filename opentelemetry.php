@@ -22,7 +22,7 @@ try{
     $redis->set("opentelemetry","opentelemetry");
     $redis->get("opentelemetry");
     unset($redis);
-}catch(Exception $e){
+}catch(Throwable $e){
 }
 echo 'ing memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n";
 opentelemetry_shutdown_cli_tracer();
