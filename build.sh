@@ -8,8 +8,8 @@ protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) open
 protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/metrics/experimental/metrics_config_service.proto
 protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/metrics/v1/metrics.proto
 protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/resource/v1/resource.proto
-protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/resource/v1/resource.proto
 protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/common/v1/common.proto
+protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/trace/v1/trace.proto
 protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/trace/v1/trace_config.proto
 protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/collector/logs/v1/logs_service.proto
 protoc --proto_path=$(pwd)/third_party/opentelemetry-proto --cpp_out=$(pwd) opentelemetry/proto/collector/metrics/v1/metrics_service.proto
