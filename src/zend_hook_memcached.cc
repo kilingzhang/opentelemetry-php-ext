@@ -37,8 +37,9 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
   if (is_has_provider()) {
 
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
-    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_INTERNAL);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_MEMCACHED);
+    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
+    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_DB);
+    set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_MEMCACHED);
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {
@@ -69,7 +70,7 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
       if (i == 1 && Z_TYPE_P(p) == IS_STRING) {
 
-        set_string_attribute(span->add_attributes(), "memcached.key", str);
+        set_string_attribute(span->add_attributes(), "db.cache.key", str);
 
         if (std::find(mecStrKeysCommands.begin(), mecStrKeysCommands.end(), cmd) != mecStrKeysCommands.end()) {
 
@@ -91,9 +92,15 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
           str_zval = zend_hash_str_find(Z_ARRVAL_P(&server), "port", 4);
           port = Z_LVAL_P(str_zval);
 
-          set_string_attribute(span->add_attributes(), "memcached.peer", host + ":" + std::to_string(port));
-          set_string_attribute(span->add_attributes(), "memcached.host", host);
-          set_int64_attribute(span->add_attributes(), "memcached.port", port);
+          set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
+
+          if (inet_addr(host.c_str()) != INADDR_NONE) {
+            set_string_attribute(span->add_attributes(), "net.peer.ip", host);
+          } else {
+            set_string_attribute(span->add_attributes(), "net.peer.name", host);
+          }
+          set_int64_attribute(span->add_attributes(), "net.peer.port", port);
+
           host.clear();
           host.shrink_to_fit();
           zval_dtor(&server);
@@ -112,7 +119,7 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
     if (!command.empty()) {
       std::transform(command.begin(), command.end(), command.begin(), ::tolower);
       command = trim(command);
-      set_string_attribute(span->add_attributes(), "memcached.command", command);
+      set_string_attribute(span->add_attributes(), "db.statement", command);
     }
 
     command.clear();

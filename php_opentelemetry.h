@@ -115,15 +115,15 @@ extern zend_module_entry opentelemetry_module_entry;
 #define COMPONENTS_ERROR  "error"
 #define COMPONENTS_EXCEPTION  "exception"
 #define COMPONENTS_CURL  "curl"
-#define COMPONENTS_DB  "db"
 #define COMPONENTS_YAR  "yar"
 #define COMPONENTS_YAR_CLIENT  "yar_client"
 #define COMPONENTS_YAR_SERVER  "yar_server"
 #define COMPONENTS_GRPC  "grpc"
-#define COMPONENTS_PREDIS  "predis"
+#define COMPONENTS_DB  "db"
 #define COMPONENTS_MYSQL  "mysql"
 #define COMPONENTS_REDIS  "redis"
 #define COMPONENTS_MEMCACHED  "memcached"
+#define COMPONENTS_PREDIS  "predis"
 
 #if (defined(unix) || defined(__unix__) || defined(__unix)) && !defined(__APPLE__)
 #define PLATFORM_NAME "unix"

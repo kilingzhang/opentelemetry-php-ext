@@ -34,8 +34,9 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
   Span *span;
   if (is_has_provider()) {
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
-    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_INTERNAL);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_REDIS);
+    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
+    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_DB);
+    set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_REDIS);
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {
@@ -59,13 +60,17 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
       if (!Z_ISUNDEF(zval_host) && !Z_ISUNDEF(zval_port) && Z_TYPE(zval_host) == IS_STRING &&
           Z_TYPE(zval_port) == IS_LONG) {
         std::string host = ZSTR_VAL(Z_STR(zval_host));
-        std::string peer = host;
         long port = Z_LVAL(zval_port);
-        peer = peer.append(":").append(std::to_string(port));
-        set_string_attribute(span->add_attributes(), "redis.peer", peer);
-        set_string_attribute(span->add_attributes(), "redis.host", host);
-        set_int64_attribute(span->add_attributes(), "redis.port", port);
-        peer.shrink_to_fit();
+
+        set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
+
+        if (inet_addr(host.c_str()) != INADDR_NONE) {
+          set_string_attribute(span->add_attributes(), "net.peer.ip", host);
+        } else {
+          set_string_attribute(span->add_attributes(), "net.peer.name", host);
+        }
+        set_int64_attribute(span->add_attributes(), "net.peer.port", port);
+
         host.shrink_to_fit();
       }
 
@@ -93,7 +98,7 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
       }
 
       if (i == 1) {
-        set_string_attribute(span->add_attributes(), "redis.key", Z_STRVAL_P(&str_p));
+        set_string_attribute(span->add_attributes(), "db.cache.key", Z_STRVAL_P(&str_p));
       }
       char *tmp = zend_str_tolower_dup(Z_STRVAL_P(&str_p), Z_STRLEN_P(&str_p));
       command = command.append(tmp);
@@ -106,7 +111,7 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
     if (!command.empty()) {
       std::transform(command.begin(), command.end(), command.begin(), ::tolower);
       command = trim(command);
-      set_string_attribute(span->add_attributes(), "redis.command", command);
+      set_string_attribute(span->add_attributes(), "db.statement", command);
     }
 
     redisKeysCommands.clear();
