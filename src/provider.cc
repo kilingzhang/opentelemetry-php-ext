@@ -40,9 +40,9 @@ ResourceSpans *Provider::getTracer() {
       auto resource = resourceSpan->resource().New();
       resource->set_dropped_attributes_count(0);
       set_string_attribute(resource->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
-      set_string_attribute(resource->add_attributes(), "service.ip", OPENTELEMETRY_G(ipv4));
+      set_string_attribute(resource->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
+      set_string_attribute(resource->add_attributes(), "net.host.name", name);
       set_string_attribute(resource->add_attributes(), "os.type", PLATFORM_NAME);
-      set_string_attribute(resource->add_attributes(), "host.name", name);
       set_string_attribute(resource->add_attributes(), "process.pid", std::to_string(getpid()));
       set_string_attribute(resource->add_attributes(), "telemetry.sdk.language", "php");
       set_string_attribute(resource->add_attributes(), "deployment.environment", OPENTELEMETRY_G(environment));
@@ -59,9 +59,9 @@ ResourceSpans *Provider::getTracer() {
       auto resource = resourceSpans[ppid]->resource().New();
       resource->set_dropped_attributes_count(0);
       set_string_attribute(resource->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
-      set_string_attribute(resource->add_attributes(), "service.ip", OPENTELEMETRY_G(ipv4));
+      set_string_attribute(resource->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
+      set_string_attribute(resource->add_attributes(), "net.host.name", name);
       set_string_attribute(resource->add_attributes(), "os.type", PLATFORM_NAME);
-      set_string_attribute(resource->add_attributes(), "host.name", name);
       set_string_attribute(resource->add_attributes(), "process.pid", std::to_string(getpid()));
       set_string_attribute(resource->add_attributes(), "telemetry.sdk.language", "php");
       set_string_attribute(resource->add_attributes(), "deployment.environment", OPENTELEMETRY_G(environment));

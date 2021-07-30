@@ -111,7 +111,7 @@ extern zend_module_entry opentelemetry_module_entry;
 #define COMPONENTS_KEY  "component"
 #define COMPONENTS_HTTP  "http"
 #define COMPONENTS_REQUEST  "request"
-#define COMPONENTS_CLI  "cli"
+#define COMPONENTS_PROCESS  "process"
 #define COMPONENTS_ERROR  "error"
 #define COMPONENTS_EXCEPTION  "exception"
 #define COMPONENTS_CURL  "curl"

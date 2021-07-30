@@ -111,14 +111,14 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
           error_message = message->val;
 #endif
 
-    std::string trace_caller = find_trace_caller(caller);
+    std::string code_stacktrace = find_code_stacktrace(caller);
     set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_ERROR);
     set_string_attribute(span->add_attributes(), "error.level", level);
     set_string_attribute(span->add_attributes(), "error.message", log);
-    set_string_attribute(span->add_attributes(), "error.caller", trace_caller);
+    set_string_attribute(span->add_attributes(), "error.caller", code_stacktrace);
 
     if (isError) {
-      if (trace_caller.empty()) {
+      if (code_stacktrace.empty()) {
         set_span_error(OPENTELEMETRY_G(provider)->firstOneSpan(), error_message);
       }
       errorEnd(span, error_message);
@@ -126,7 +126,7 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
       okEnd(span);
     }
 
-    trace_caller.shrink_to_fit();
+    code_stacktrace.shrink_to_fit();
     function_name.shrink_to_fit();
     log.shrink_to_fit();
     log.shrink_to_fit();

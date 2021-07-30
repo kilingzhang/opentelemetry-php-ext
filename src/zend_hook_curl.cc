@@ -94,8 +94,7 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
     set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_HTTP);
     set_string_attribute(span->add_attributes(), "http.scheme", php_url_scheme == nullptr ? "" : php_url_scheme);
     set_string_attribute(span->add_attributes(), "http.host", php_url_host == nullptr ? "" : php_url_host);
-    set_string_attribute(span->add_attributes(), "http.path", php_url_path == nullptr ? "" : php_url_path);
-    set_string_attribute(span->add_attributes(), "http.query", php_url_query == nullptr ? "" : php_url_query);
+    set_string_attribute(span->add_attributes(), "http.target", php_url_path == nullptr ? "" : (php_url_path + (php_url_query == nullptr ? "" : "?" + std::string(php_url_query))));
 
     std::string traceparent = formatTraceParentHeader(span);
     add_next_index_string(option, ("traceparent: " + traceparent).c_str());
@@ -132,11 +131,11 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {
-      std::string trace_caller = find_trace_caller(caller);
-      if (!trace_caller.empty()) {
-        set_string_attribute(span->add_attributes(), "trace.caller", trace_caller);
+      std::string code_stacktrace = find_code_stacktrace(caller);
+      if (!code_stacktrace.empty()) {
+        set_string_attribute(span->add_attributes(), "code.stacktrace", code_stacktrace);
       }
-      trace_caller.shrink_to_fit();
+      code_stacktrace.shrink_to_fit();
     }
 
     // get response
@@ -151,7 +150,7 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
     response_http_code = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("http_code"));
     set_int64_attribute(span->add_attributes(), "http.status_code", Z_LVAL_P(response_http_code));
     response_primary_ip = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("primary_ip"));
-    set_string_attribute(span->add_attributes(), "http.primary_ip", Z_STR_P(response_primary_ip)->val);
+    set_string_attribute(span->add_attributes(), "net.peer.ip", Z_STR_P(response_primary_ip)->val);
     if (Z_LVAL_P(response_http_code) == 0) {
       // get errors
       zval curl_error;

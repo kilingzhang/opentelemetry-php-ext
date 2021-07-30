@@ -421,7 +421,7 @@ std::string find_trace_add_scope_name(zend_string *function_name, zend_class_ent
 }
 
 /* Prepend the name of the scope class to the function name */
-std::string find_trace_caller(zend_execute_data *caller) {
+std::string find_code_stacktrace(zend_execute_data *caller) {
 
   std::string name;
   std::string function_name;
@@ -438,7 +438,7 @@ std::string find_trace_caller(zend_execute_data *caller) {
   }
   caller = caller->prev_execute_data;
   if (caller != nullptr && caller->func) {
-    name = find_trace_caller(caller);
+    name = find_code_stacktrace(caller);
     if (!name.empty()) {
       name = name.append("\\");
     }

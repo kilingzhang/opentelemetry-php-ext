@@ -10,6 +10,7 @@
 
 #include <thread>
 #include <string>
+#include <cstdlib>
 
 #include <grpc/support/log.h>
 #include <grpcpp/security/credentials.h>
@@ -169,8 +170,10 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
     auto span = OPENTELEMETRY_G(provider)->createFirstSpan(uri, kind);
     OPENTELEMETRY_G(provider)->parseTraceParent(traceparent);
     OPENTELEMETRY_G(provider)->parseTraceState(tracestate);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_CLI);
-    set_string_attribute(span->add_attributes(), "cli.argv", opentelemetry_json_encode(&copy_value));
+    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_PROCESS);
+    set_string_attribute(span->add_attributes(), "process.executable.name", uri);
+    set_string_attribute(span->add_attributes(), "process.command_args", opentelemetry_json_encode(&copy_value));
+    set_string_attribute(span->add_attributes(), "process.pid", std::to_string(getpid()));
     zval_dtor(&copy_value);
 
   } else {
@@ -184,12 +187,19 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
     std::string request_method = find_server_string("REQUEST_METHOD", sizeof("REQUEST_METHOD") - 1);
     std::string request_query = find_server_string("QUERY_STRING", sizeof("QUERY_STRING") - 1);
     std::string request_http_host = find_server_string("HTTP_HOST", sizeof("HTTP_HOST") - 1);
+    std::string request_http_port = find_server_string("SERVER_PORT", sizeof("SERVER_PORT") - 1);
+    std::string request_user_agent = find_server_string("HTTP_USER_AGENT", sizeof("HTTP_USER_AGENT") - 1);
+    std::string request_remote_ip = find_server_string("REMOTE_ADDR", sizeof("REMOTE_ADDR") - 1);
+    std::string request_uri = find_server_string("REQUEST_URI", sizeof("REQUEST_URI") - 1);
 
     set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_REQUEST);
-    set_string_attribute(span->add_attributes(), "request.method", request_method);
-    set_string_attribute(span->add_attributes(), "request.query", request_query);
-    set_string_attribute(span->add_attributes(), "request.http_host", request_http_host);
-    set_string_attribute(span->add_attributes(), "request.host", request_http_host);
+    set_string_attribute(span->add_attributes(), "http.method", request_method);
+    set_string_attribute(span->add_attributes(), "http.host", request_http_host);
+    set_string_attribute(span->add_attributes(), "http.target", request_uri);
+    set_string_attribute(span->add_attributes(), "http.client_ip", request_remote_ip);
+    set_string_attribute(span->add_attributes(), "http.user_agent", request_user_agent);
+    set_string_attribute(span->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
+    set_int64_attribute(span->add_attributes(), "net.host.port", strtol(request_http_port.c_str(), nullptr, 10));
 
     request_method.shrink_to_fit();
     request_query.shrink_to_fit();

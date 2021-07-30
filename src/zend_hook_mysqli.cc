@@ -25,7 +25,7 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
   std::string name;
   std::string class_name;
   std::string function_name;
-  std::string trace_caller;
+  std::string code_stacktrace;
 
   if (zf->internal_function.scope != nullptr && zf->internal_function.scope->name != nullptr) {
     class_name = std::string(ZSTR_VAL(zf->internal_function.scope->name));
@@ -47,9 +47,9 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {
-      trace_caller = find_trace_caller(caller);
-      if (!trace_caller.empty()) {
-        set_string_attribute(span->add_attributes(), "trace.caller", trace_caller);
+      code_stacktrace = find_code_stacktrace(caller);
+      if (!code_stacktrace.empty()) {
+        set_string_attribute(span->add_attributes(), "code.stacktrace", code_stacktrace);
       }
     }
 
@@ -116,7 +116,7 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
   name.shrink_to_fit();
   class_name.shrink_to_fit();
   function_name.shrink_to_fit();
-  trace_caller.shrink_to_fit();
+  code_stacktrace.shrink_to_fit();
 }
 
 void register_zend_hook_mysqli() {

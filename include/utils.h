@@ -201,7 +201,7 @@ std::string find_trace_generate_class_name(zend_string *class_name, zend_string 
 
 std::string find_trace_add_scope_name(zend_string *function_name, zend_class_entry *scope, uint32_t fn_flags);
 
-std::string find_trace_caller(zend_execute_data *caller);
+std::string find_code_stacktrace(zend_execute_data *caller);
 
 void set_string_attribute(KeyValue *attribute, const std::string &key, const std::string &value);
 
