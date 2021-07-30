@@ -42,8 +42,9 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
   if (is_has_provider()) {
 
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
-    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_INTERNAL);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_MYSQL);
+    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
+    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_DB);
+    set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_MYSQL);
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {
@@ -78,7 +79,6 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
     }
 
     if (statement != nullptr && Z_TYPE_P(statement) == IS_STRING) {
-      set_string_attribute(span->add_attributes(), "db.type", "mysql");
       set_string_attribute(span->add_attributes(), "db.statement", Z_STRVAL_P(statement));
     }
 
@@ -93,7 +93,15 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
 #else
           std::string host = mysql->mysql->data->host;
 #endif
-          set_string_attribute(span->add_attributes(), "db.peer", host + ":" + std::to_string(mysql->mysql->data->port));
+
+          set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
+
+          if (inet_addr(host.c_str()) != INADDR_NONE) {
+            set_string_attribute(span->add_attributes(), "net.peer.ip", host);
+          } else {
+            set_string_attribute(span->add_attributes(), "net.peer.name", host);
+          }
+          set_int64_attribute(span->add_attributes(), "net.peer.port", mysql->mysql->data->port);
 
         }
       }

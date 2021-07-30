@@ -38,8 +38,8 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
   Span *span;
   if (is_has_provider()) {
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
-    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_INTERNAL);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_MYSQL);
+    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
+    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_DB);
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {
@@ -51,17 +51,23 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
     char db_type[64] = {0};
     auto *stmt = (pdo_stmt_t *) Z_PDO_STMT_P(&(execute_data->This));
+    bool is_set_db_system = false;
     if (stmt != nullptr) {
       set_string_attribute(span->add_attributes(), "db.statement", stmt->query_string);
       if (stmt->dbh != nullptr && stmt->dbh->driver->driver_name != nullptr) {
         memcpy(db_type, (char *) stmt->dbh->driver->driver_name, stmt->dbh->driver->driver_name_len);
-        set_string_attribute(span->add_attributes(), "db.type", db_type);
+        is_set_db_system = true;
+        set_string_attribute(span->add_attributes(), "db.system", db_type);
+      }
+
+      if (!is_set_db_system) {
+        set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_MYSQL);
       }
 
       if (db_type[0] != '\0' && stmt->dbh != nullptr && stmt->dbh->data_source != nullptr) {
         std::string source = stmt->dbh->data_source;
 
-        set_string_attribute(span->add_attributes(), "db.data_source", source);
+        set_string_attribute(span->add_attributes(), "db.connection_string", source);
 
         std::regex ws_re(";");
         std::regex kv_re("=");
@@ -84,9 +90,15 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
           }
         }
 
-        set_string_attribute(span->add_attributes(), "db.host", host);
-        set_int64_attribute(span->add_attributes(), "db.port", strtol(port.c_str(), nullptr, 10));
-        set_string_attribute(span->add_attributes(), "db.peer", host + ":" + port);
+        set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
+
+        if (inet_addr(host.c_str()) != INADDR_NONE) {
+          set_string_attribute(span->add_attributes(), "net.peer.ip", host);
+        } else {
+          set_string_attribute(span->add_attributes(), "net.peer.name", host);
+        }
+        set_int64_attribute(span->add_attributes(), "net.peer.port", strtol(port.c_str(), nullptr, 10));
+
       }
     }
 
