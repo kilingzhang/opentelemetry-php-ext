@@ -41,28 +41,28 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
     case E_CORE_ERROR:
     case E_COMPILE_ERROR:
     case E_USER_ERROR:
-    case E_RECOVERABLE_ERROR:level = "ERROR";
+    case E_RECOVERABLE_ERROR:level = "PHP_ERROR_FATAL";
       break;
     case E_WARNING:
     case E_CORE_WARNING:
     case E_COMPILE_WARNING:
-    case E_USER_WARNING:level = "WARNING";
+    case E_USER_WARNING:level = "PHP_ERROR_WARNING";
       break;
     case E_NOTICE:
     case E_USER_NOTICE:
     case E_STRICT:
     case E_DEPRECATED:
-    case E_USER_DEPRECATED:level = "NOTICE";
+    case E_USER_DEPRECATED:level = "PHP_ERROR_NOTICE";
       break;
-    default:level = "E_" + std::to_string(type);
+    default:level = "PHP_ERROR_" + std::to_string(type);
       break;
   }
 
-  if (level == "WARNING" && is_equal("E_ERROR", OPENTELEMETRY_G(error_level))) {
+  if (level == "PHP_ERROR_WARNING" && is_equal("E_ERROR", OPENTELEMETRY_G(error_level))) {
     isCollector = false;
   }
 
-  if (level == "NOTICE" && (
+  if (level == "PHP_ERROR_" && (
       is_equal("E_ERROR", OPENTELEMETRY_G(error_level)) ||
           is_equal("E_WARNING", OPENTELEMETRY_G(error_level))
   )) {
@@ -94,7 +94,8 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
     span->set_parent_span_id(parentId);
 
     bool isError = EG(error_reporting) & type;
-    std::string log = error_filename;
+    std::string stacktrace = error_filename;
+    stacktrace.append(":").append(std::to_string(error_lineno));
     std::string error_message;
 
 #if PHP_VERSION_ID < 80000
@@ -103,19 +104,18 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
     va_copy(args_copy, args);
     vspprintf(&msg, 0, format, args_copy);
     va_end(args_copy);
-    log = log.append("(").append(std::to_string(error_lineno)).append("): ").append(msg);
     error_message = msg;
     efree(msg);
 #else
-    log = log.append("(").append(std::to_string(error_lineno)).append("): ").append(message->val);
-          error_message = message->val;
+    error_message = message->val;
 #endif
 
     std::string code_stacktrace = find_code_stacktrace(caller);
     set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_ERROR);
-    set_string_attribute(span->add_attributes(), "error.level", level);
-    set_string_attribute(span->add_attributes(), "error.message", log);
-    set_string_attribute(span->add_attributes(), "error.caller", code_stacktrace);
+    set_string_attribute(span->add_attributes(), "exception.type", level);
+    set_string_attribute(span->add_attributes(), "exception.message", error_message);
+    set_string_attribute(span->add_attributes(), "exception.stacktrace", stacktrace);
+    set_string_attribute(span->add_attributes(), "code.stacktrace", code_stacktrace);
 
     if (isError) {
       if (code_stacktrace.empty()) {
@@ -128,12 +128,11 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
 
     code_stacktrace.shrink_to_fit();
     function_name.shrink_to_fit();
-    log.shrink_to_fit();
-    log.shrink_to_fit();
+    stacktrace.shrink_to_fit();
+    error_message.shrink_to_fit();
 
   }
-  level.
-      shrink_to_fit();
+  level.shrink_to_fit();
 
 #if PHP_VERSION_ID < 80000
   opentelemetry_original_zend_error_cb(type, error_filename, error_lineno, format, args
