@@ -40,7 +40,6 @@ void exporterOpentelemetry() {
     }
 
     auto rtn = mq.try_send(msg.data(), msg.size(), 0);
-    log("send : " + std::to_string(rtn) + " pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
   } catch (interprocess_exception &ex) {
     log("flush message_queue ex : " + std::string(ex.what()));
   }

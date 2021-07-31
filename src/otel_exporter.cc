@@ -19,8 +19,6 @@ OtelExporter::OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channe
 
 void OtelExporter::sendAsyncTracer(ExportTraceServiceRequest *request, long long int milliseconds) {
 
-  log("request resource_spans trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()) + " pid:" + std::to_string(getpid()));
-
   grpc::ClientContext context;
   std::chrono::system_clock::time_point deadline = std::chrono::system_clock::now() +
       std::chrono::milliseconds(milliseconds);
@@ -65,7 +63,6 @@ void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int 
     return;
   }
 
-  log("[OTLP Exporter] Export() success. pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
 }
 
 // Loop while listening for completed responses.
@@ -79,7 +76,6 @@ void OtelExporter::AsyncCompleteRpc() {
   // Block until the next result is available in the completion queue "cq".
   while (auto ret = cq_.AsyncNext(&got_tag, &ok, deadline)) {
 
-    log("AsyncNext pid:" + std::to_string(getpid()));
     if (ret == grpc::CompletionQueue::GOT_EVENT) {
 
       // The tag in this example is the memory location of the call object
@@ -90,7 +86,6 @@ void OtelExporter::AsyncCompleteRpc() {
       GPR_ASSERT(ok);
 
       if (!call->status.ok()) {
-        log("[OTLP Exporter] Export() success pid:" + std::to_string(getpid()));
       } else {
         log("[opentelemetry] [OTLP Exporter] Export() failed: " + call->status.error_message() + " pid:" + std::to_string(getpid()));
       }
