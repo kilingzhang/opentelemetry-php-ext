@@ -5,6 +5,7 @@
 #include "php_opentelemetry.h"
 #include "include/provider.h"
 #include "include/utils.h"
+#include <include/hex.h>
 
 #include <utility>
 #include <random>
@@ -162,8 +163,8 @@ void Provider::parseTraceParent(const std::string &traceparent) {
     std::vector<std::string> kv = explode("-", traceparent);
     if (kv.size() == 4) {
       auto span = firstOneSpan();
-      span->set_trace_id(HexDecode(kv[1]).c_str(), 16);
-      span->set_parent_span_id(HexDecode(kv[2]).c_str(), 8);
+      span->set_trace_id(Hex::decode(kv[1]).data(), 16);
+      span->set_parent_span_id(Hex::decode(kv[2]).data(), 8);
       //TODO setTraceFlags(kv[3]);
     }
   } else {

@@ -35,12 +35,12 @@ void exporterOpentelemetry() {
     int msg_length = static_cast<int>(msg.size());
     int max_length = OPENTELEMETRY_G(grpc_max_message_size);
     if (msg_length > max_length) {
-      log("message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length) + " pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
+      log("message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length) + " pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
       return;
     }
 
     auto rtn = mq.try_send(msg.data(), msg.size(), 0);
-    log("send : " + std::to_string(rtn) + " pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
+    log("send : " + std::to_string(rtn) + " pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
   } catch (interprocess_exception &ex) {
     log("flush message_queue ex : " + std::string(ex.what()));
   }

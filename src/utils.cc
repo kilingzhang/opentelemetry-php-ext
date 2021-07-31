@@ -4,6 +4,7 @@
 
 #include "php_opentelemetry.h"
 #include "include/utils.h"
+#include <include/hex.h>
 #include "zend_types.h"
 #include "zend_smart_str.h"
 
@@ -19,8 +20,8 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
-#include <array>
 
+#include <array>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -229,50 +230,6 @@ boost::uuids::uuid generate_span_id() {
 
 boost::uuids::uuid generate_trace_id() {
   return boost::uuids::random_generator()();
-}
-
-std::string to_hex(char *ch, int size) {
-  std::string result;
-  for (int i = 0; i < strlen(ch) && i <= size; i++) {
-    const size_t hi = (ch[i] >> 4) & 0x0F;
-    result += boost::uuids::detail::to_char(hi);
-    const size_t lo = (ch[i]) & 0x0F;
-    result += boost::uuids::detail::to_char(lo);
-  }
-  return result;
-}
-
-//* 将数16进（大写或小写）制转为数字
-inline int FromHex(unsigned int c) {
-  return ((c >= '0') && (c <= '9')) ? int(c - '0') :
-      ((c >= 'A') && (c <= 'F')) ? int(c - 'A' + 10) :
-          ((c >= 'a') && (c <= 'f')) ? int(c - 'a' + 10) :
-              /* otherwise */              -1;
-}
-
-//* 将数据d用16进制解码，返回值即是结果
-std::string HexDecode(const std::string &hex) {
-  std::string res;
-  res.resize(hex.size() + 1 / 2);
-  unsigned char *pResult = (unsigned char *) res.data() + res.size();
-  bool odd_digit = true;
-
-  for (int i = hex.size() - 1; i >= 0; i--) {
-    unsigned char ch = hex.at(i);
-    int tmp = FromHex(ch);
-    if (tmp == -1)
-      continue;
-    if (odd_digit) {
-      --pResult;
-      *pResult = tmp;
-      odd_digit = false;
-    } else {
-      *pResult |= tmp << 4;
-      odd_digit = true;
-    }
-  }
-  res.erase(0, pResult - (unsigned char *) res.data());
-  return res;
 }
 
 bool starts_with(const char *pre, const char *str) {
@@ -496,8 +453,16 @@ void errorEnd(Span *span, const std::string &message) {
   span->set_end_time_unix_nano(get_unix_nanoseconds());
 }
 
+std::string traceId(const Span &span) {
+  return Hex::encode(reinterpret_cast<const uint8_t *>(span.trace_id().data()), 16);
+}
+
+std::string spanId(const Span &span) {
+  return Hex::encode(reinterpret_cast<const uint8_t *>(span.span_id().data()), 8);
+}
+
 std::string formatTraceParentHeader(Span *span) {
-  return "00-" + to_hex(string2char(span->trace_id()), 16) + "-" + to_hex(string2char(span->span_id()), 8) + "-" + "01";
+  return "00-" + traceId(*span) + "-" + spanId(*span) + "-" + "01";
 }
 
 std::string formatTraceStateHeader(Span *span) {

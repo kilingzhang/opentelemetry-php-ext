@@ -19,7 +19,7 @@ OtelExporter::OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channe
 
 void OtelExporter::sendAsyncTracer(ExportTraceServiceRequest *request, long long int milliseconds) {
 
-  log("request resource_spans trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()) + " pid:" + std::to_string(getpid()));
+  log("request resource_spans trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()) + " pid:" + std::to_string(getpid()));
 
   grpc::ClientContext context;
   std::chrono::system_clock::time_point deadline = std::chrono::system_clock::now() +
@@ -61,11 +61,11 @@ void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int 
   grpc::Status status = stub_->Export(&context, *request, &response);
 
   if (!status.ok()) {
-    log("[OTLP Exporter] Export() failed: " + status.error_message() + " pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
+    log("[OTLP Exporter] Export() failed: " + status.error_message() + " pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
     return;
   }
 
-  log("[OTLP Exporter] Export() success. pid:" + std::to_string(getpid()) + " trace id : " + to_hex(string2char(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0).trace_id()), 16) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
+  log("[OTLP Exporter] Export() success. pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
 }
 
 // Loop while listening for completed responses.

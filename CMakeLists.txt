@@ -104,6 +104,8 @@ set(ext_src_list
     include/zend_hook_exception.h
     src/otel_exporter.cc
     include/otel_exporter.h
+    src/hex.cc
+    include/hex.h
     )
 add_library(ext-opentelemetry SHARED ${ext_src_list})
 set_target_properties(ext-opentelemetry PROPERTIES PREFIX "")

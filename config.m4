@@ -92,9 +92,10 @@ if test "$PHP_OPENTELEMETRY" != "no"; then
         opentelemetry/proto/trace/v1/trace_config.pb.cc
         opentelemetry/proto/collector/trace/v1/trace_service.pb.cc
         opentelemetry/proto/collector/trace/v1/trace_service_grpc.pb.cc
+        src/hex.cc
+        src/utils.cc
         src/provider.cc
         src/otel_exporter.cc
-        src/utils.cc
         src/core.cc
         src/sdk.cc
         src/zend_hook.cc

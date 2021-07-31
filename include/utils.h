@@ -108,21 +108,6 @@ boost::uuids::uuid generate_span_id();
 
 /**
  *
- * @param ch
- * @param size
- * @return
- */
-std::string to_hex(char *ch, int size);
-
-/**
- *
- * @param hex
- * @return
- */
-std::string HexDecode(const std::string &hex);
-
-/**
- *
  * @param pre
  * @param str
  * @return
@@ -216,6 +201,10 @@ void set_span_error(Span *span, const std::string &message);
 void okEnd(Span *span);
 
 void errorEnd(Span *span, const std::string &message);
+
+std::string traceId(const Span &span);
+
+std::string spanId(const Span &span);
 
 std::string formatTraceParentHeader(Span *span);
 
