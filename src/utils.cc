@@ -326,6 +326,33 @@ std::vector<std::string> split(const std::string &str, const std::string &patter
   return res;
 }
 
+std::vector<std::string> explode(const std::string &delimiter, const std::string &str) {
+  std::vector<std::string> arr;
+  unsigned long length = str.length();
+  unsigned long delLength = delimiter.length();
+  if (delLength == 0) {
+    return arr;
+  }
+
+  unsigned long i = 0;
+  unsigned long k = 0;
+  while (i < length) {
+    int j = 0;
+    while (i + j < length && j < delLength && str[i + j] == delimiter[j])
+      j++;
+    if (j == delLength)//found delimiter
+    {
+      arr.emplace_back(str.substr(k, i - k));
+      i += delLength;
+      k = i;
+    } else {
+      i++;
+    }
+  }
+  arr.emplace_back(str.substr(k, i - k));
+  return arr;
+}
+
 zval *read_object_property(zval *obj, const char *property, int parent) {
   if (Z_TYPE_P(obj) == IS_OBJECT) {
     zend_object *object = obj->value.obj;

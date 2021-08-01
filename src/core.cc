@@ -224,7 +224,6 @@ void shutdown_tracer() {
     long time_consuming = OPENTELEMETRY_G(provider)->firstOneSpan()->end_time_unix_nano() -
         OPENTELEMETRY_G(provider)->firstOneSpan()->start_time_unix_nano();
     time_consuming /= 1000000;
-    log("time_consuming : " + std::to_string(time_consuming) + " max_time_consuming : " + std::to_string(OPENTELEMETRY_G(max_time_consuming)) + " trace id : " + traceId(*OPENTELEMETRY_G(provider)->firstOneSpan()));
     if (time_consuming >= OPENTELEMETRY_G(max_time_consuming) ||
         OPENTELEMETRY_G(provider)->isSampled()) {
       exporterOpentelemetry();

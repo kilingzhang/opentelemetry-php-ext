@@ -61,7 +61,7 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
     array_init(yar_headers);
     std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(span);
     add_next_index_string(yar_headers, ("traceparent: " + traceparent).c_str());
-    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader(span);
+    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader();
     add_next_index_string(yar_headers, ("tracestate: " + tracestate).c_str());
     ZVAL_COPY(&params[1], yar_headers);
 

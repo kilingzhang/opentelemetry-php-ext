@@ -15,9 +15,7 @@ PHP_FUNCTION (opentelemetry_get_traceparent);
 
 PHP_FUNCTION (opentelemetry_get_tracestate);
 
-PHP_FUNCTION (opentelemetry_get_user_id);
-
-PHP_FUNCTION (opentelemetry_set_user_id);
+PHP_FUNCTION (opentelemetry_add_tracestate);
 
 PHP_FUNCTION (opentelemetry_set_sample_ratio_based);
 

@@ -97,7 +97,7 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
     std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(span);
     add_next_index_string(option, ("traceparent: " + traceparent).c_str());
-    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader(span);
+    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader();
     add_next_index_string(option, ("tracestate: " + tracestate).c_str());
 
     set_string_attribute(span->add_attributes(), "http.header", opentelemetry_json_encode(option));

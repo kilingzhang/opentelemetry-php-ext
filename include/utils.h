@@ -180,6 +180,8 @@ std::string trim(std::string s);
  */
 std::vector<std::string> split(const std::string &str, const std::string &pattern);
 
+std::vector<std::string> explode(const std::string &delimiter, const std::string &str);
+
 zval *read_object_property(zval *obj, const char *property, int parent);
 
 std::string find_trace_generate_class_name(zend_string *class_name, zend_string *function_name, uint32_t fn_flags);

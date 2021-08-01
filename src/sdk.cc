@@ -86,28 +86,30 @@ PHP_FUNCTION (opentelemetry_get_traceparent) {
  */
 PHP_FUNCTION (opentelemetry_get_tracestate) {
   if (is_has_provider()) {
-    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader(OPENTELEMETRY_G(provider)->firstOneSpan());
+    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader();
     RETURN_STRING(string2char(tracestate));
   }
   RETURN_STRING("");
 }
 
-/**
- *
- * @param execute_data
- * @param return_value
- */
-PHP_FUNCTION (opentelemetry_get_user_id) {
-  //TODO
-}
+PHP_FUNCTION (opentelemetry_add_tracestate) {
 
-/**
- *
- * @param execute_data
- * @param return_value
- */
-PHP_FUNCTION (opentelemetry_set_user_id) {
-  //TODO
+  if (is_has_provider()) {
+    char *key = nullptr;
+    size_t key_len;
+    char *value = nullptr;
+    size_t value_len;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss",
+                              &key, &key_len, &value, &value_len) == FAILURE) {
+      RETURN_FALSE;
+    }
+
+    OPENTELEMETRY_G(provider)->addTraceStates(key, value);
+
+    RETURN_TRUE;
+  }
+  RETURN_FALSE;
 }
 
 /**

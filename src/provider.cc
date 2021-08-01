@@ -154,31 +154,42 @@ void Provider::clean() {
   }
 }
 
-std::vector<std::string> explode(const std::string &delimiter, const std::string &str) {
-  std::vector<std::string> arr;
-  unsigned long length = str.length();
-  unsigned long delLength = delimiter.length();
-  if (delLength == 0) {
-    return arr;
+void Provider::addTraceStates(const std::string &key, const std::string &value) {
+  tsl::robin_map<std::string, std::string> traceStates;
+  std::string statesHeader;
+  if (!is_cli_sapi()) {
+    states[key] = value;
+    traceStates = states;
+  } else {
+    pid_t ppid = get_current_ppid();
+    states_map[ppid][key] = value;
+    traceStates = states_map[ppid];
   }
+  auto iter = traceStates.begin();
+  bool first = true;
+  while (iter != traceStates.end()) {
+    if (!first) {
+      statesHeader = statesHeader.append(",");
+    }
+    first = false;
+    statesHeader = statesHeader.append(iter->first);
+    statesHeader = statesHeader.append("=");
+    statesHeader = statesHeader.append(iter->second);
+    iter++;
+  }
+  OPENTELEMETRY_G(provider)->firstOneSpan()->set_trace_state(statesHeader);
+}
 
-  unsigned long i = 0;
-  unsigned long k = 0;
-  while (i < length) {
-    int j = 0;
-    while (i + j < length && j < delLength && str[i + j] == delimiter[j])
-      j++;
-    if (j == delLength)//found delimiter
-    {
-      arr.emplace_back(str.substr(k, i - k));
-      i += delLength;
-      k = i;
-    } else {
-      i++;
+tsl::robin_map<std::string, std::string> Provider::getTraceStates() {
+  if (!is_cli_sapi()) {
+    return states;
+  } else {
+    pid_t ppid = get_current_ppid();
+    if (states_map.find(ppid) != states_map.end()) {
+      return states_map[ppid];
     }
   }
-  arr.emplace_back(str.substr(k, i - k));
-  return arr;
+  return {};
 }
 
 void Provider::parseTraceParent(const std::string &traceparent) {
@@ -208,7 +219,7 @@ void Provider::parseTraceState(const std::string &tracestate) {
     for (const auto &item : explode(",", tracestate)) {
       std::vector<std::string> kv = explode("=", item);
       if (kv.size() == 2) {
-        //TODO addTraceState(kv[0], kv[1]);
+        addTraceStates(kv[0], kv[1]);
       }
     }
   }
@@ -218,8 +229,8 @@ std::string Provider::formatTraceParentHeader(Span *span) {
   return "00-" + traceId(*span) + "-" + spanId(*span) + "-" + (isSampled() ? "01" : "00");
 }
 
-std::string Provider::formatTraceStateHeader(Span *span) {
-  return span->trace_state();
+std::string Provider::formatTraceStateHeader() {
+  return OPENTELEMETRY_G(provider)->firstOneSpan()->trace_state();
 }
 
 
