@@ -111,7 +111,6 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
 #endif
 
     std::string code_stacktrace = find_code_stacktrace(caller);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_ERROR);
     set_string_attribute(span->add_attributes(), "exception.type", level);
     set_string_attribute(span->add_attributes(), "exception.message", error_message);
     set_string_attribute(span->add_attributes(), "exception.stacktrace", stacktrace);

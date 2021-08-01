@@ -169,7 +169,6 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
     auto span = OPENTELEMETRY_G(provider)->createFirstSpan(uri, kind);
     OPENTELEMETRY_G(provider)->parseTraceParent(traceparent);
     OPENTELEMETRY_G(provider)->parseTraceState(tracestate);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_PROCESS);
     set_string_attribute(span->add_attributes(), "process.executable.name", uri);
     set_string_attribute(span->add_attributes(), "process.command_args", opentelemetry_json_encode(&copy_value));
     set_string_attribute(span->add_attributes(), "process.pid", std::to_string(getpid()));
@@ -191,7 +190,6 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
     std::string request_remote_ip = find_server_string("REMOTE_ADDR", sizeof("REMOTE_ADDR") - 1);
     std::string request_uri = find_server_string("REQUEST_URI", sizeof("REQUEST_URI") - 1);
 
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_REQUEST);
     set_string_attribute(span->add_attributes(), "http.method", request_method);
     set_string_attribute(span->add_attributes(), "http.host", request_http_host);
     set_string_attribute(span->add_attributes(), "http.target", request_uri);

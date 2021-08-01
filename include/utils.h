@@ -192,6 +192,8 @@ void set_string_attribute(KeyValue *attribute, const std::string &key, const std
 
 void set_int64_attribute(KeyValue *attribute, const std::string &key, int64_t value);
 
+void set_double_attribute(KeyValue *attribute, const std::string &key, double value);
+
 void set_bool_attribute(KeyValue *attribute, const std::string &key, bool value);
 
 void set_span_ok(Span *span);

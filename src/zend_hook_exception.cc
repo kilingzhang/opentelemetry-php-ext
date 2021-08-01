@@ -78,7 +78,6 @@ void opentelemetry_throw_exception_hook(zval *exception) {
       span->set_parent_span_id(parentId);
       errorEnd(span, exception_message);
 
-      set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_EXCEPTION);
       set_string_attribute(span->add_attributes(), "exception.type", Z_OBJ_P(exception)->ce->name->val);
       set_string_attribute(span->add_attributes(), "exception.message", exception_message);
       set_string_attribute(span->add_attributes(), "exception.stacktrace", exception_file.append(":").append(std::to_string(exception_line)));

@@ -35,7 +35,6 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
   if (is_has_provider()) {
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
     span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_DB);
     set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_REDIS);
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;

@@ -91,7 +91,6 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
     std::string parentId = OPENTELEMETRY_G(provider)->firstOneSpan()->span_id();
     span = OPENTELEMETRY_G(provider)->createSpan(php_url_path == nullptr ? "/" : php_url_path, Span_SpanKind_SPAN_KIND_CLIENT);
     span->set_parent_span_id(parentId);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_HTTP);
     set_string_attribute(span->add_attributes(), "http.scheme", php_url_scheme == nullptr ? "" : php_url_scheme);
     set_string_attribute(span->add_attributes(), "http.host", php_url_host == nullptr ? "" : php_url_host);
     set_string_attribute(span->add_attributes(), "http.target", php_url_path == nullptr ? "" : (php_url_path + (php_url_query == nullptr ? "" : "?" + std::string(php_url_query))));
@@ -146,11 +145,31 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
     zval_dtor(&func);
     zval_dtor(&args[0]);
 
-    zval *response_http_code, *response_primary_ip;
+    zval *response_http_code, *response_primary_ip, *response_total_time, *response_name_lookup_time, *response_connect_time, *response_pre_transfer_time, *response_start_transfer_time, *response_redirect_time;
     response_http_code = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("http_code"));
     set_int64_attribute(span->add_attributes(), "http.status_code", Z_LVAL_P(response_http_code));
     response_primary_ip = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("primary_ip"));
     set_string_attribute(span->add_attributes(), "net.peer.ip", Z_STR_P(response_primary_ip)->val);
+
+    //总共的传输时间
+    response_total_time = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("total_time"));
+    set_double_attribute(span->add_attributes(), "http.response_total_time", Z_DVAL_P(response_total_time));
+    //直到DNS解析完成时间
+    response_name_lookup_time = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("namelookup_time"));
+    set_double_attribute(span->add_attributes(), "http.response_name_lookup_time", Z_DVAL_P(response_name_lookup_time));
+    //建立连接时间
+    response_connect_time = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("connect_time"));
+    set_double_attribute(span->add_attributes(), "http.response_connect_time", Z_DVAL_P(response_connect_time));
+    //传输前耗时
+    response_pre_transfer_time = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("pretransfer_time"));
+    set_double_attribute(span->add_attributes(), "http.response_pre_transfer_time", Z_DVAL_P(response_pre_transfer_time));
+    //开始传输
+    response_start_transfer_time = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("starttransfer_time"));
+    set_double_attribute(span->add_attributes(), "http.response_start_transfer_time", Z_DVAL_P(response_start_transfer_time));
+    //重定向时间
+    response_redirect_time = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("redirect_time"));
+    set_double_attribute(span->add_attributes(), "http.response_redirect_time", Z_DVAL_P(response_redirect_time));
+
     if (Z_LVAL_P(response_http_code) == 0) {
       // get errors
       zval curl_error;

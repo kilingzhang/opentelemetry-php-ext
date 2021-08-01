@@ -38,7 +38,6 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
     span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_YAR_CLIENT);
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {
@@ -167,7 +166,6 @@ void opentelemetry_yar_server_handler(INTERNAL_FUNCTION_PARAMETERS) {
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
     span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_INTERNAL);
 
-    set_string_attribute(span->add_attributes(), COMPONENTS_KEY, COMPONENTS_YAR_SERVER);
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
     if (caller != nullptr && caller->func) {

@@ -414,10 +414,24 @@ void set_string_attribute(KeyValue *attribute, const std::string &key, const std
   attribute->set_allocated_value(anyValue);
 }
 
+void set_double_attribute(KeyValue *attribute, const std::string &key, const std::string &value) {
+  attribute->set_key(key);
+  auto anyValue = new AnyValue();
+  anyValue->set_string_value(value);
+  attribute->set_allocated_value(anyValue);
+}
+
 void set_int64_attribute(KeyValue *attribute, const std::string &key, int64_t value) {
   attribute->set_key(key);
   auto anyValue = new AnyValue();
   anyValue->set_int_value(value);
+  attribute->set_allocated_value(anyValue);
+}
+
+void set_double_attribute(KeyValue *attribute, const std::string &key, double value) {
+  attribute->set_key(key);
+  auto anyValue = new AnyValue();
+  anyValue->set_double_value(value);
   attribute->set_allocated_value(anyValue);
 }
 
