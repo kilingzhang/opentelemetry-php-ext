@@ -114,6 +114,29 @@ Span Provider::latestSpan() {
   return *firstOneSpan();
 }
 
+bool Provider::isSampled() {
+  if (!is_cli_sapi()) {
+    if (is_sampled) {
+      return true;
+    }
+  } else {
+    pid_t ppid = get_current_ppid();
+    if (sampled_map.find(ppid) != sampled_map.end()) {
+      return sampled_map[ppid];
+    }
+  }
+  return false;
+}
+
+void Provider::setSampled(bool isSampled) {
+  if (!is_cli_sapi()) {
+    is_sampled = isSampled;
+  } else {
+    pid_t ppid = get_current_ppid();
+    sampled_map[ppid] = isSampled;
+  }
+};
+
 void Provider::clean() {
   if (!is_cli_sapi()) {
     if (request) {
@@ -165,16 +188,17 @@ void Provider::parseTraceParent(const std::string &traceparent) {
       auto span = firstOneSpan();
       span->set_trace_id(Hex::decode(kv[1]).data(), 16);
       span->set_parent_span_id(Hex::decode(kv[2]).data(), 8);
-      //TODO setTraceFlags(kv[3]);
+      setSampled(kv[3] == "01");
     }
   } else {
     std::random_device rd;
     std::mt19937 mt(rd());
     std::uniform_int_distribution<int> dist(1, OPENTELEMETRY_G(sample_ratio_based));
-    if (OPENTELEMETRY_G(sample_ratio_based) == 1 || dist(mt) == OPENTELEMETRY_G(sample_ratio_based)) {
-      //TODO setTraceFlags("01");
+    int d = dist(mt);
+    if (OPENTELEMETRY_G(sample_ratio_based) == 1 || d == OPENTELEMETRY_G(sample_ratio_based)) {
+      setSampled(true);
     } else if (OPENTELEMETRY_G(sample_ratio_based) == 0) {
-      //TODO setTraceFlags("00");
+      setSampled(false);
     }
   }
 }
@@ -188,6 +212,14 @@ void Provider::parseTraceState(const std::string &tracestate) {
       }
     }
   }
+}
+
+std::string Provider::formatTraceParentHeader(Span *span) {
+  return "00-" + traceId(*span) + "-" + spanId(*span) + "-" + (isSampled() ? "01" : "00");
+}
+
+std::string Provider::formatTraceStateHeader(Span *span) {
+  return span->trace_state();
 }
 
 

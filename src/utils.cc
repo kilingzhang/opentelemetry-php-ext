@@ -474,11 +474,3 @@ std::string traceId(const Span &span) {
 std::string spanId(const Span &span) {
   return Hex::encode(reinterpret_cast<const uint8_t *>(span.span_id().data()), 8);
 }
-
-std::string formatTraceParentHeader(Span *span) {
-  return "00-" + traceId(*span) + "-" + spanId(*span) + "-" + "01";
-}
-
-std::string formatTraceStateHeader(Span *span) {
-  return span->trace_state();
-}

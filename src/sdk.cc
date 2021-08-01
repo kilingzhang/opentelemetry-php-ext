@@ -73,7 +73,7 @@ PHP_FUNCTION (opentelemetry_shutdown_cli_tracer) {
  */
 PHP_FUNCTION (opentelemetry_get_traceparent) {
   if (is_has_provider()) {
-    std::string traceparent = formatTraceParentHeader(OPENTELEMETRY_G(provider)->firstOneSpan());
+    std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(OPENTELEMETRY_G(provider)->firstOneSpan());
     RETURN_STRING(string2char(traceparent));
   }
   RETURN_STRING("");
@@ -86,7 +86,7 @@ PHP_FUNCTION (opentelemetry_get_traceparent) {
  */
 PHP_FUNCTION (opentelemetry_get_tracestate) {
   if (is_has_provider()) {
-    std::string tracestate = formatTraceStateHeader(OPENTELEMETRY_G(provider)->firstOneSpan());
+    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader(OPENTELEMETRY_G(provider)->firstOneSpan());
     RETURN_STRING(string2char(tracestate));
   }
   RETURN_STRING("");
@@ -120,13 +120,20 @@ PHP_FUNCTION (opentelemetry_set_sample_ratio_based) {
     long ratio_based;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l",
                               &ratio_based) == SUCCESS) {
-      std::string traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
-      std::random_device rd;
-      std::mt19937 mt(rd());
-      std::uniform_int_distribution<int> dist(1, (int) ratio_based);
-      if ((traceparent.empty() && dist(mt) == ratio_based) ||
-          (!traceparent.empty() && ratio_based == 1)) {
-        //TODO
+      if (ratio_based == 0) {
+        OPENTELEMETRY_G(provider)->setSampled(false);
+      } else if (ratio_based == 1) {
+        OPENTELEMETRY_G(provider)->setSampled(true);
+      } else {
+        std::string traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
+        std::random_device rd;
+        std::mt19937 mt(rd());
+        std::uniform_int_distribution<int> dist(1, (int) ratio_based);
+        int d = dist(mt);
+        if ((traceparent.empty() && d == ratio_based) ||
+            (!traceparent.empty() && ratio_based == 1)) {
+          OPENTELEMETRY_G(provider)->setSampled(true);
+        }
       }
 
     }

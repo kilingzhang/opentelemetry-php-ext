@@ -40,6 +40,8 @@ void exporterOpentelemetry() {
     }
 
     auto rtn = mq.try_send(msg.data(), msg.size(), 0);
+//    auto span = request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0);
+//    log(span.name() + " trace id : " + traceId(span) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
   } catch (interprocess_exception &ex) {
     log("flush message_queue ex : " + std::string(ex.what()));
   }
@@ -219,7 +221,14 @@ void shutdown_tracer() {
 
   if (OPENTELEMETRY_G(provider)->firstOneSpan()) {
     okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
-    exporterOpentelemetry();
+    long time_consuming = OPENTELEMETRY_G(provider)->firstOneSpan()->end_time_unix_nano() -
+        OPENTELEMETRY_G(provider)->firstOneSpan()->start_time_unix_nano();
+    time_consuming /= 1000000;
+    log("time_consuming : " + std::to_string(time_consuming) + " max_time_consuming : " + std::to_string(OPENTELEMETRY_G(max_time_consuming)) + " trace id : " + traceId(*OPENTELEMETRY_G(provider)->firstOneSpan()));
+    if (time_consuming >= OPENTELEMETRY_G(max_time_consuming) ||
+        OPENTELEMETRY_G(provider)->isSampled()) {
+      exporterOpentelemetry();
+    }
     OPENTELEMETRY_G(provider)->clean();
   }
 

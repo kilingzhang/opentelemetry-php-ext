@@ -207,8 +207,4 @@ void errorEnd(Span *span, const std::string &message);
 std::string traceId(const Span &span);
 
 std::string spanId(const Span &span);
-
-std::string formatTraceParentHeader(Span *span);
-
-std::string formatTraceStateHeader(Span *span);
 #endif //OPENTELEMETRY_UTILS_H

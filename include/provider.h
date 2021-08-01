@@ -30,9 +30,16 @@ class Provider {
 
   opentelemetry::proto::trace::v1::Span latestSpan();
 
+  bool isSampled();
+
+  void setSampled(bool isSampled);
+
   void clean();
   void parseTraceParent(const std::string &traceparent);
   void parseTraceState(const std::string &tracestate);
+
+  std::string formatTraceParentHeader(opentelemetry::proto::trace::v1::Span *span);
+  std::string formatTraceStateHeader(opentelemetry::proto::trace::v1::Span *span);
  private:
   opentelemetry::proto::trace::v1::ResourceSpans *resourceSpan = nullptr;
   tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::ResourceSpans *> resourceSpans;
@@ -40,6 +47,8 @@ class Provider {
   tsl::robin_map<pid_t, opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *> requests;
   opentelemetry::proto::trace::v1::Span *firstSpan = nullptr;
   tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::Span *> firstSpans;
+  bool is_sampled = false;
+  tsl::robin_map<pid_t, bool> sampled_map;
 };
 
 #endif //OPENTELEMETRY_TRACING_H

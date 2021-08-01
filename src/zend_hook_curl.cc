@@ -95,9 +95,9 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
     set_string_attribute(span->add_attributes(), "http.host", php_url_host == nullptr ? "" : php_url_host);
     set_string_attribute(span->add_attributes(), "http.target", php_url_path == nullptr ? "" : (php_url_path + (php_url_query == nullptr ? "" : "?" + std::string(php_url_query))));
 
-    std::string traceparent = formatTraceParentHeader(span);
+    std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(span);
     add_next_index_string(option, ("traceparent: " + traceparent).c_str());
-    std::string tracestate = formatTraceStateHeader(span);
+    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader(span);
     add_next_index_string(option, ("tracestate: " + tracestate).c_str());
 
     set_string_attribute(span->add_attributes(), "http.header", opentelemetry_json_encode(option));

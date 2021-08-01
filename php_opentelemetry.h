@@ -88,6 +88,7 @@ extern zend_module_entry opentelemetry_module_entry;
 #define PHP_OPENTELEMETRY_GRPC_ENDPOINT "127.0.0.1:4317"
 #define PHP_OPENTELEMETRY_ENVIRONMENT "staging"
 #define PHP_OPENTELEMETRY_ERROR_LEVEL "E_ERROR"
+#define PHP_OPENTELEMETRY_MAX_TIME_CONSUMING "1000"
 #define PHP_IS_DEBUG OPENTELEMETRY_DEBUG
 
 #define OPENTELEMETRY_START_CLI_TRACER_FUNCTION_NAME  "opentelemetry_start_cli_tracer"
@@ -173,6 +174,7 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   char *service_name_key;
   char *error_level;
   int sample_ratio_based;
+  int max_time_consuming;
   char *unix_socket;
   char *log_path;
   char *grpc_endpoint;
