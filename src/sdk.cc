@@ -86,7 +86,7 @@ PHP_FUNCTION (opentelemetry_get_traceparent) {
  */
 PHP_FUNCTION (opentelemetry_get_tracestate) {
   if (is_has_provider()) {
-    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader();
+    std::string tracestate = Provider::formatTraceStateHeader();
     RETURN_STRING(string2char(tracestate));
   }
   RETURN_STRING("");

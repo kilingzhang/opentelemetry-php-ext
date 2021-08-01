@@ -76,7 +76,7 @@ void opentelemetry_throw_exception_hook(zval *exception) {
       std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
       auto *span = OPENTELEMETRY_G(provider)->createSpan(function_name, Span_SpanKind_SPAN_KIND_INTERNAL);
       span->set_parent_span_id(parentId);
-      errorEnd(span, exception_message);
+      Provider::errorEnd(span, exception_message);
 
       set_string_attribute(span->add_attributes(), "exception.type", Z_OBJ_P(exception)->ce->name->val);
       set_string_attribute(span->add_attributes(), "exception.message", exception_message);

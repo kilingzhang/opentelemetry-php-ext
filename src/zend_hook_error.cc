@@ -118,11 +118,11 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
 
     if (isError) {
       if (code_stacktrace.empty()) {
-        set_span_error(OPENTELEMETRY_G(provider)->firstOneSpan(), error_message);
+        Provider::errorEnd(OPENTELEMETRY_G(provider)->firstOneSpan(), error_message);
       }
-      errorEnd(span, error_message);
+      Provider::errorEnd(span, error_message);
     } else {
-      okEnd(span);
+      Provider::okEnd(span);
     }
 
     code_stacktrace.shrink_to_fit();

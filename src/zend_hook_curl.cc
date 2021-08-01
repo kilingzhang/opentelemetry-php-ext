@@ -97,7 +97,7 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
     std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(span);
     add_next_index_string(option, ("traceparent: " + traceparent).c_str());
-    std::string tracestate = OPENTELEMETRY_G(provider)->formatTraceStateHeader();
+    std::string tracestate = Provider::formatTraceStateHeader();
     add_next_index_string(option, ("tracestate: " + tracestate).c_str());
 
     set_string_attribute(span->add_attributes(), "http.header", opentelemetry_json_encode(option));
@@ -176,17 +176,17 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
       ZVAL_COPY(&args[0], zid);
       ZVAL_STRING(&func, "curl_error");
       call_user_function(CG(function_table), nullptr, &func, &curl_error, 1, args);
-      errorEnd(span, Z_STRVAL(curl_error));
+      Provider::errorEnd(span, Z_STRVAL(curl_error));
 
       zval_dtor(&func);
       zval_dtor(&args[0]);
       zval_dtor(&curl_error);
     } else if (Z_LVAL_P(response_http_code) >= 400) {
-      errorEnd(span, Z_STR_P(return_value)->val);
+      Provider::errorEnd(span, Z_STR_P(return_value)->val);
     }
     zval_dtor(&url_response);
 
-    okEnd(span);
+    Provider::okEnd(span);
   }
 
   zval_dtor(&url_info);

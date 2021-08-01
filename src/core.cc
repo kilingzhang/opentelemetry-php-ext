@@ -220,12 +220,8 @@ void shutdown_tracer() {
   }
 
   if (OPENTELEMETRY_G(provider)->firstOneSpan()) {
-    okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
-    long time_consuming = OPENTELEMETRY_G(provider)->firstOneSpan()->end_time_unix_nano() -
-        OPENTELEMETRY_G(provider)->firstOneSpan()->start_time_unix_nano();
-    time_consuming /= 1000000;
-    if (time_consuming >= OPENTELEMETRY_G(max_time_consuming) ||
-        OPENTELEMETRY_G(provider)->isSampled()) {
+    Provider::okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
+    if (OPENTELEMETRY_G(provider)->isSampled()) {
       exporterOpentelemetry();
     }
     OPENTELEMETRY_G(provider)->clean();

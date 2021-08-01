@@ -469,31 +469,6 @@ void set_bool_attribute(KeyValue *attribute, const std::string &key, bool value)
   attribute->set_allocated_value(anyValue);
 }
 
-void set_span_ok(Span *span) {
-  if (span->status().code() == Status_StatusCode_STATUS_CODE_UNSET) {
-    auto status = new Status();
-    status->set_code(Status_StatusCode_STATUS_CODE_OK);
-    span->set_allocated_status(status);
-  }
-}
-
-void set_span_error(Span *span, const std::string &message) {
-  auto status = new Status();
-  status->set_code(Status_StatusCode_STATUS_CODE_ERROR);
-  status->set_message(message);
-  span->set_allocated_status(status);
-}
-
-void okEnd(Span *span) {
-  set_span_ok(span);
-  span->set_end_time_unix_nano(get_unix_nanoseconds());
-}
-
-void errorEnd(Span *span, const std::string &message) {
-  set_span_error(span, message);
-  span->set_end_time_unix_nano(get_unix_nanoseconds());
-}
-
 std::string traceId(const Span &span) {
   return Hex::encode(reinterpret_cast<const uint8_t *>(span.trace_id().data()), 16);
 }

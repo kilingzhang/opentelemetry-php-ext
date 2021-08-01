@@ -45,6 +45,10 @@ class Provider {
 
   std::string formatTraceParentHeader(opentelemetry::proto::trace::v1::Span *span);
   static std::string formatTraceStateHeader();
+
+  static void okEnd(opentelemetry::proto::trace::v1::Span *span);
+  static void errorEnd(opentelemetry::proto::trace::v1::Span *span, const std::string &message);
+
  private:
   opentelemetry::proto::trace::v1::ResourceSpans *resourceSpan = nullptr;
   tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::ResourceSpans *> resourceSpans;

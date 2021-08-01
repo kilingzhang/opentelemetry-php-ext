@@ -121,11 +121,14 @@ bool Provider::isSampled() {
     }
   } else {
     pid_t ppid = get_current_ppid();
-    if (sampled_map.find(ppid) != sampled_map.end()) {
-      return sampled_map[ppid];
+    if (sampled_map.find(ppid) != sampled_map.end() && sampled_map[ppid]) {
+      return true;
     }
   }
-  return false;
+  
+  unsigned long time_consuming = get_unix_nanoseconds() - OPENTELEMETRY_G(provider)->firstOneSpan()->start_time_unix_nano();
+  time_consuming /= 1000000;
+  return time_consuming >= OPENTELEMETRY_G(max_time_consuming);
 }
 
 void Provider::setSampled(bool isSampled) {
@@ -231,6 +234,24 @@ std::string Provider::formatTraceParentHeader(Span *span) {
 
 std::string Provider::formatTraceStateHeader() {
   return OPENTELEMETRY_G(provider)->firstOneSpan()->trace_state();
+}
+
+void Provider::okEnd(Span *span) {
+  if (span->status().code() == Status_StatusCode_STATUS_CODE_UNSET) {
+    auto status = new Status();
+    status->set_code(Status_StatusCode_STATUS_CODE_OK);
+    span->set_allocated_status(status);
+  }
+  span->set_end_time_unix_nano(get_unix_nanoseconds());
+}
+
+void Provider::errorEnd(Span *span, const std::string &message) {
+  auto status = new Status();
+  status->set_code(Status_StatusCode_STATUS_CODE_ERROR);
+  status->set_message(message);
+  span->set_allocated_status(status);
+  span->set_end_time_unix_nano(get_unix_nanoseconds());
+  OPENTELEMETRY_G(provider)->setSampled(true);
 }
 
 

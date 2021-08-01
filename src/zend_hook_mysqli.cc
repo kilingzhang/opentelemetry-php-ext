@@ -115,7 +115,7 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
   }
 
   if (is_has_provider()) {
-    okEnd(span);
+    Provider::okEnd(span);
   }
 
   cmd.clear();

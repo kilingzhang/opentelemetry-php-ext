@@ -198,14 +198,6 @@ void set_double_attribute(KeyValue *attribute, const std::string &key, double va
 
 void set_bool_attribute(KeyValue *attribute, const std::string &key, bool value);
 
-void set_span_ok(Span *span);
-
-void set_span_error(Span *span, const std::string &message);
-
-void okEnd(Span *span);
-
-void errorEnd(Span *span, const std::string &message);
-
 std::string traceId(const Span &span);
 
 std::string spanId(const Span &span);
