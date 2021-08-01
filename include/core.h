@@ -10,7 +10,7 @@
 /**
  *
  */
-[[noreturn]] void consumer();
+[[noreturn]] void consumer(const std::string &name);
 
 /**
  *

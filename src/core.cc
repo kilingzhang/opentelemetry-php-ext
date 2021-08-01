@@ -24,31 +24,30 @@ void exporterOpentelemetry() {
 
   auto request = OPENTELEMETRY_G(provider)->getRequest();
   std::string msg = request->SerializePartialAsString();
+  std::string name = "opentelemetry_" + std::to_string(request->ByteSizeLong() % OPENTELEMETRY_G(grpc_consumer));
   try {
 
     //Create a message_queue.
     message_queue mq(
         boost::interprocess::open_only,
-        "opentelemetry"
+        name.c_str()
     );
 
     int msg_length = static_cast<int>(msg.size());
     int max_length = OPENTELEMETRY_G(grpc_max_message_size);
     if (msg_length > max_length) {
-      log("message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length) + " pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
+      log(name + " message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length) + " pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
       return;
     }
 
     auto rtn = mq.try_send(msg.data(), msg.size(), 0);
-//    auto span = request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0);
-//    log(span.name() + " trace id : " + traceId(span) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
   } catch (interprocess_exception &ex) {
-    log("flush message_queue ex : " + std::string(ex.what()));
+    log("send " + name + " flush message_queue ex : " + std::string(ex.what()));
   }
 
 }
 
-[[noreturn]] void consumer() {
+[[noreturn]] void consumer(const std::string &name) {
 
   grpc::ChannelArguments args;
   args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
@@ -64,7 +63,7 @@ void exporterOpentelemetry() {
       message_queue mq
           (
               open_only,//only create
-              "opentelemetry"//name
+              name.c_str()
           );
 
       std::string data;
@@ -80,7 +79,7 @@ void exporterOpentelemetry() {
       }
 
     } catch (interprocess_exception &ex) {
-      log("flush message_queue ex : " + std::string(ex.what()));
+      log("consumer " + name + " flush message_queue ex : " + std::string(ex.what()));
     }
   }
 }
@@ -91,6 +90,10 @@ void opentelemetry_module_init() {
     return;
   }
 
+  if (is_cli_sapi()) {
+    OPENTELEMETRY_G(grpc_consumer) = 2;
+  }
+
   //初始化日志目录
   if (access(OPENTELEMETRY_G(log_path), 0) == -1) {
     php_stream_mkdir(OPENTELEMETRY_G(log_path), 0777, PHP_STREAM_MKDIR_RECURSIVE, nullptr);
@@ -98,22 +101,30 @@ void opentelemetry_module_init() {
 
   OPENTELEMETRY_G(ipv4) = get_current_machine_ip(DEFAULT_ETH_INF);
 
-  try {
-    message_queue::remove("opentelemetry");
-    //Erase previous message queue
-    message_queue(
-        boost::interprocess::open_or_create,
-        "opentelemetry",
-        1024,
-        OPENTELEMETRY_G(grpc_max_message_size),
-        boost::interprocess::permissions(0666)
-    );
-  } catch (interprocess_exception &ex) {
-    log("flush message_queue ex : " + std::string(ex.what()));
-  }
+  for (int i = 0; i < OPENTELEMETRY_G(grpc_consumer); i++) {
 
-  std::thread th(consumer);
-  th.detach();
+    std::string name = "opentelemetry_" + std::to_string(i);
+    try {
+      message_queue::remove(name.c_str());
+      //Erase previous message queue
+      message_queue(
+          boost::interprocess::open_or_create,
+          name.c_str(),
+          OPENTELEMETRY_G(grpc_max_queue_length),
+          OPENTELEMETRY_G(grpc_max_message_size),
+          boost::interprocess::permissions(0666)
+      );
+
+      log("open " + name + " message queue success .");
+
+      std::thread th(consumer, name);
+      th.detach();
+
+    } catch (interprocess_exception &ex) {
+      log("open " + name + " flush message_queue ex : " + std::string(ex.what()));
+    }
+
+  }
 
   register_zend_hook();
 }

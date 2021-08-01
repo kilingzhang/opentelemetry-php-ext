@@ -179,6 +179,8 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   char *log_path;
   char *grpc_endpoint;
   int grpc_max_message_size;
+  int grpc_max_queue_length;
+  int grpc_consumer;
   int grpc_timeout_milliseconds;
   Provider *provider;
   std::string ipv4;
