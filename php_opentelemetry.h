@@ -169,6 +169,7 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   bool enable_redis;
   bool enable_mysql;
   bool enable_yar;
+  bool enable_collect;
   char *environment;
   char *service_name;
   char *service_name_key;

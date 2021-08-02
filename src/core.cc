@@ -232,7 +232,7 @@ void shutdown_tracer() {
 
   if (OPENTELEMETRY_G(provider)->firstOneSpan()) {
     Provider::okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
-    if (OPENTELEMETRY_G(provider)->isSampled()) {
+    if (OPENTELEMETRY_G(enable_collect) && OPENTELEMETRY_G(provider)->isSampled()) {
       exporterOpentelemetry();
     }
     OPENTELEMETRY_G(provider)->clean();
