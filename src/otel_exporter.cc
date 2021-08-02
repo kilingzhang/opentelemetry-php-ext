@@ -66,8 +66,6 @@ void OtelExporter::AsyncCompleteRpc() {
   void *got_tag;
   bool ok = false;
 
-  //1 seconds retry
-  auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
   // Block until the next result is available in the completion queue "cq".
   while (auto ret = cq_.Next(&got_tag, &ok)) {
 
