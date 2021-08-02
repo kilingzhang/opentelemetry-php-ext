@@ -12,83 +12,17 @@
 #include <string>
 #include <cstdlib>
 
-#include <grpc/support/log.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/create_channel.h>
 
-#include <boost/interprocess/ipc/message_queue.hpp>
-
-using namespace boost::interprocess;
-
-void exporterOpentelemetry() {
-
-  auto request = OPENTELEMETRY_G(provider)->getRequest();
-  std::string msg = request->SerializePartialAsString();
-  std::string name = "opentelemetry_" + std::to_string(request->ByteSizeLong() % OPENTELEMETRY_G(grpc_consumer));
-  try {
-
-    //Create a message_queue.
-    message_queue mq(
-        boost::interprocess::open_only,
-        name.c_str()
-    );
-
-    int msg_length = static_cast<int>(msg.size());
-    int max_length = OPENTELEMETRY_G(grpc_max_message_size);
-    if (msg_length > max_length) {
-      log(name + " message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length) + " pid:" + std::to_string(getpid()) + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)) + " ByteSizeLong : " + std::to_string(request->ByteSizeLong()));
-      return;
-    }
-
-    mq.try_send(msg.data(), msg.size(), 0);
-  } catch (interprocess_exception &ex) {
-    log("send " + name + " flush message_queue ex : " + std::string(ex.what()));
-  }
-
-}
-
-[[noreturn]] void consumer(const std::string &name) {
-
+void exporterOpentelemetry(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request) {
   grpc::ChannelArguments args;
   args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
   args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 1000);
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000);
   auto otelExporter = new OtelExporter(grpc::CreateCustomChannel(
       OPENTELEMETRY_G(grpc_endpoint), grpc::InsecureChannelCredentials(), args));
-
-  // 启动新线程，从队列中取出结果并处理
-  std::thread thread_ = std::thread(&OtelExporter::AsyncCompleteRpc, otelExporter);
-  thread_.detach();
-
-  message_queue *mq = nullptr;
-  try {
-    //Open a message queue.
-    mq =
-        new message_queue(
-            open_only,//only create
-            name.c_str()
-        );
-  } catch (interprocess_exception &ex) {
-    log("open consumer " + name + " flush message_queue ex : " + std::string(ex.what()));
-  }
-
-  while (mq) {
-    try {
-      std::string data;
-      data.resize(OPENTELEMETRY_G(grpc_max_message_size));
-      size_t msg_size;
-      unsigned msg_priority;
-      bool rtn = mq->timed_receive(&data[0], data.size(), msg_size, msg_priority, boost::posix_time::ptime(microsec_clock::universal_time()) + boost::posix_time::milliseconds(500));
-      if (rtn && !data.empty()) {
-        data.resize(msg_size);
-        auto request = new opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest();
-        request->ParseFromString(data);
-        otelExporter->sendAsyncTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
-      }
-    } catch (interprocess_exception &ex) {
-      log("consumer " + name + " flush message_queue ex : " + std::string(ex.what()));
-    }
-  }
+  otelExporter->sendTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
 }
 
 void opentelemetry_module_init() {
@@ -97,41 +31,12 @@ void opentelemetry_module_init() {
     return;
   }
 
-  if (is_cli_sapi()) {
-    OPENTELEMETRY_G(grpc_consumer) = 2;
-  }
-
   //初始化日志目录
   if (access(OPENTELEMETRY_G(log_path), 0) == -1) {
     php_stream_mkdir(OPENTELEMETRY_G(log_path), 0777, PHP_STREAM_MKDIR_RECURSIVE, nullptr);
   }
 
   OPENTELEMETRY_G(ipv4) = get_current_machine_ip(DEFAULT_ETH_INF);
-
-  for (int i = 0; i < OPENTELEMETRY_G(grpc_consumer); i++) {
-
-    std::string name = "opentelemetry_" + std::to_string(i);
-    try {
-      message_queue::remove(name.c_str());
-      //Erase previous message queue
-      message_queue(
-          boost::interprocess::open_or_create,
-          name.c_str(),
-          OPENTELEMETRY_G(grpc_max_queue_length),
-          OPENTELEMETRY_G(grpc_max_message_size),
-          boost::interprocess::permissions(0666)
-      );
-
-      log("open " + name + " message queue success .");
-
-      std::thread th(consumer, name);
-      th.detach();
-
-    } catch (interprocess_exception &ex) {
-      log("open " + name + " flush message_queue ex : " + std::string(ex.what()));
-    }
-
-  }
 
   register_zend_hook();
 }
@@ -240,7 +145,9 @@ void shutdown_tracer() {
   if (OPENTELEMETRY_G(provider)->firstOneSpan()) {
     Provider::okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
     if (OPENTELEMETRY_G(enable_collect) && OPENTELEMETRY_G(provider)->isSampled()) {
-      exporterOpentelemetry();
+      auto request = OPENTELEMETRY_G(provider)->getRequest();
+      std::thread th = std::thread(&exporterOpentelemetry, request);
+      th.detach();
     }
     OPENTELEMETRY_G(provider)->clean();
   }

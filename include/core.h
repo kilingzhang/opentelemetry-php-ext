@@ -9,14 +9,9 @@
 
 /**
  *
+ * @param request
  */
-[[noreturn]] void consumer(const std::string &name);
-
-/**
- *
- * @param tracer
- */
-void exporterOpentelemetry();
+void exporterOpentelemetry(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request);
 
 /**
  *
