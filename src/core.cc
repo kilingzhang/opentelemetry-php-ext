@@ -40,7 +40,7 @@ void exporterOpentelemetry() {
       return;
     }
 
-    mq.timed_send(msg.data(), msg.size(), 0, boost::posix_time::ptime(microsec_clock::universal_time()) + boost::posix_time::milliseconds(50));
+    mq.try_send(msg.data(), msg.size(), 0);
   } catch (interprocess_exception &ex) {
     log("send " + name + " flush message_queue ex : " + std::string(ex.what()));
   }
