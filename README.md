@@ -1,5 +1,14 @@
 # opentelemetry-php-ext
 
+## 简介
+opentelemetry php 客户端。底层自动埋点。无接入成本。追求性能优化。
+
+## 支持
+
+- [x] trace
+- [ ] metric 
+- [ ] logging
+
 ## SDK
 
 [opentelemetry-php](https://github.com/kilingzhang/opentelemetry-php)
