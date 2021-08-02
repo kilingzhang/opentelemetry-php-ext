@@ -60,28 +60,31 @@ void exporterOpentelemetry() {
   std::thread thread_ = std::thread(&OtelExporter::AsyncCompleteRpc, otelExporter);
   thread_.detach();
 
-  while (true) {
+  message_queue *mq = nullptr;
+  try {
+    //Open a message queue.
+    mq =
+        new message_queue(
+            open_only,//only create
+            name.c_str()
+        );
+  } catch (interprocess_exception &ex) {
+    log("open consumer " + name + " flush message_queue ex : " + std::string(ex.what()));
+  }
 
+  while (mq) {
     try {
-      //Open a message queue.
-      message_queue mq
-          (
-              open_only,//only create
-              name.c_str()
-          );
-
       std::string data;
       data.resize(OPENTELEMETRY_G(grpc_max_message_size));
       size_t msg_size;
       unsigned msg_priority;
-      mq.receive(&data[0], data.size(), msg_size, msg_priority);
-      if (!data.empty()) {
+      bool rtn = mq->timed_receive(&data[0], data.size(), msg_size, msg_priority, boost::posix_time::ptime(microsec_clock::universal_time()) + boost::posix_time::milliseconds(500));
+      if (rtn && !data.empty()) {
         data.resize(msg_size);
         auto request = new opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest();
         request->ParseFromString(data);
         otelExporter->sendAsyncTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
       }
-
     } catch (interprocess_exception &ex) {
       log("consumer " + name + " flush message_queue ex : " + std::string(ex.what()));
     }
