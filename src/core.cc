@@ -56,6 +56,10 @@ void exporterOpentelemetry() {
   auto otelExporter = new OtelExporter(grpc::CreateCustomChannel(
       OPENTELEMETRY_G(grpc_endpoint), grpc::InsecureChannelCredentials(), args));
 
+  // 启动新线程，从队列中取出结果并处理
+  std::thread thread_ = std::thread(&OtelExporter::AsyncCompleteRpc, otelExporter);
+  thread_.detach();
+
   while (true) {
 
     try {
@@ -75,7 +79,7 @@ void exporterOpentelemetry() {
         data.resize(msg_size);
         auto request = new opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest();
         request->ParseFromString(data);
-        otelExporter->sendTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
+        otelExporter->sendAsyncTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
       }
 
     } catch (interprocess_exception &ex) {

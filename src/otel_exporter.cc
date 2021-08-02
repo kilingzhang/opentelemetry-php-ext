@@ -22,26 +22,21 @@ void OtelExporter::sendAsyncTracer(ExportTraceServiceRequest *request, long long
   grpc::ClientContext context;
   std::chrono::system_clock::time_point deadline = std::chrono::system_clock::now() +
       std::chrono::milliseconds(milliseconds);
-  context.set_deadline(deadline);
 
-  // 保护代码
   auto *call = new AsyncClientCall;
+  call->context.set_deadline(deadline);
   // stub_->PrepareAsyncExport() creates an RPC object, returning
   // an instance to store in "call" but does not actually start the RPC
   // Because we are using the asynchronous API, we need to hold on to
   // the "call" instance in order to get updates on the ongoing RPC.
   call->response_reader =
-      stub_->PrepareAsyncExport(&call->context, *request, &cq_);
-
-  // StartCall initiates the RPC call
-  call->response_reader->StartCall();
+      stub_->AsyncExport(&call->context, *request, &cq_);
 
   // Request that, upon completion of the RPC, "reply" be updated with the
   // server's response; "status" with the indication of whether the operation
   // was successful. Tag the request with the memory address of the call
   // object.
   call->response_reader->Finish(&call->response, &call->status, (void *) call);
-
 }
 
 void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int milliseconds) {
@@ -74,31 +69,21 @@ void OtelExporter::AsyncCompleteRpc() {
   //1 seconds retry
   auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
   // Block until the next result is available in the completion queue "cq".
-  while (auto ret = cq_.AsyncNext(&got_tag, &ok, deadline)) {
+  while (auto ret = cq_.Next(&got_tag, &ok)) {
 
-    if (ret == grpc::CompletionQueue::GOT_EVENT) {
+    // The tag in this example is the memory location of the call object
+    auto *call = static_cast<AsyncClientCall *>(got_tag);
 
-      // The tag in this example is the memory location of the call object
-      auto *call = static_cast<AsyncClientCall *>(got_tag);
+    // Verify that the request was completed successfully. Note that "ok"
+    // corresponds solely to the request for updates introduced by Finish().
+    GPR_ASSERT(ok);
 
-      // Verify that the request was completed successfully. Note that "ok"
-      // corresponds solely to the request for updates introduced by Finish().
-      GPR_ASSERT(ok);
-
-      if (!call->status.ok()) {
-      } else {
-        log("[opentelemetry] [OTLP Exporter] Export() failed: " + call->status.error_message() + " pid:" + std::to_string(getpid()));
-      }
-      // Once we're complete, deallocate the call object.
-      delete call;
-
-    } else if (ret == grpc::CompletionQueue::TIMEOUT) {
-      log("[opentelemetry] [OTLP Exporter] Export() timeout pid:" + std::to_string(getpid()));
-    } else {
-      log("[opentelemetry] [OTLP Exporter] Export() unknow pid:" + std::to_string(getpid()));
+    if (!call->status.ok()) {
+      log("[opentelemetry] [OTLP Exporter] Export() failed: " + call->status.error_message() + " pid:" + std::to_string(getpid()));
     }
+    // Once we're complete, deallocate the call object.
+    delete call;
 
-    deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
   }
 };
 
