@@ -11,7 +11,7 @@
  *
  * @param request
  */
-void exporterOpentelemetry(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request);
+void exporterOpentelemetry();
 
 /**
  *

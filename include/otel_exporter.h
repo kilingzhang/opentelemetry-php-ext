@@ -36,6 +36,7 @@ class OtelExporter {
   };
  public:
   explicit OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channel);
+  ~OtelExporter();
 
   void sendAsyncTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request, long long int milliseconds);
 

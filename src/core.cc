@@ -15,14 +15,83 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/create_channel.h>
 
-void exporterOpentelemetry(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request) {
+#include <boost/interprocess/ipc/message_queue.hpp>
+
+using namespace boost::interprocess;
+
+void exporterOpentelemetry() {
+
+  auto request = OPENTELEMETRY_G(provider)->getRequest();
+  std::string msg = request->SerializePartialAsString();
+  std::string name = "opentelemetry_" + std::to_string(msg.size() % OPENTELEMETRY_G(grpc_consumer));
+
+  try {
+
+    message_queue mq(
+        open_or_create,
+        name.c_str(),
+        OPENTELEMETRY_G(grpc_max_queue_length),
+        OPENTELEMETRY_G(grpc_max_message_size),
+        boost::interprocess::permissions(0777)
+    );
+
+    int msg_length = static_cast<int>(msg.size());
+    int max_length = OPENTELEMETRY_G(grpc_max_message_size);
+    if (msg_length > max_length) {
+      log("[opentelemetry] message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length));
+      return;
+    }
+
+    if (!mq.try_send(msg.data(), msg.size(), 0)) {
+      log("[opentelemetry] send message_queue failed");
+    }
+
+  } catch (interprocess_exception &ex) {
+    log("[opentelemetry] send flush message_queue failed : " + std::string(ex.what()));
+  }
+
+}
+
+[[noreturn]] void consumer(const std::string &name) {
+
   grpc::ChannelArguments args;
   args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
   args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 1000);
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000);
   auto otelExporter = new OtelExporter(grpc::CreateCustomChannel(
       OPENTELEMETRY_G(grpc_endpoint), grpc::InsecureChannelCredentials(), args));
-  otelExporter->sendTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
+
+  // 启动新线程，从队列中取出结果并处理
+  std::thread thread_ = std::thread(&OtelExporter::AsyncCompleteRpc, otelExporter);
+  thread_.detach();
+
+  try {
+    //Open a message queue.
+    auto *mq =
+        new message_queue(
+            open_only,//only create
+            name.c_str()
+        );
+
+    while (true) {
+
+      std::string data;
+      data.resize(OPENTELEMETRY_G(grpc_max_message_size));
+      size_t msg_size;
+      unsigned msg_priority;
+      mq->receive(&data[0], data.size(), msg_size, msg_priority);
+      if (!data.empty()) {
+        data.resize(msg_size);
+        auto request = new opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest();
+        request->ParseFromString(data);
+        otelExporter->sendAsyncTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
+      }
+
+    }
+
+  } catch (interprocess_exception &ex) {
+    log("[opentelemetry] consumer failed : " + std::string(ex.what()));
+  }
 }
 
 void opentelemetry_module_init() {
@@ -37,6 +106,34 @@ void opentelemetry_module_init() {
   }
 
   OPENTELEMETRY_G(ipv4) = get_current_machine_ip(DEFAULT_ETH_INF);
+
+  log("grpc_max_queue_length : " + std::to_string(OPENTELEMETRY_G(grpc_max_queue_length)));
+  log("grpc_max_message_size : " + std::to_string(OPENTELEMETRY_G(grpc_max_message_size)));
+
+  for (int i = 0; i < OPENTELEMETRY_G(grpc_consumer); i++) {
+
+    std::string name = "opentelemetry_" + std::to_string(i);
+    try {
+      message_queue::remove(name.c_str());
+      //Erase previous message queue
+      message_queue(
+          boost::interprocess::open_or_create,
+          name.c_str(),
+          OPENTELEMETRY_G(grpc_max_queue_length),
+          OPENTELEMETRY_G(grpc_max_message_size),
+          boost::interprocess::permissions(0777)
+      );
+
+      log("open " + name + " message queue success .");
+
+      std::thread th(consumer, name);
+      th.detach();
+
+    } catch (interprocess_exception &ex) {
+      log("open " + name + " flush message_queue ex : " + std::string(ex.what()));
+    }
+
+  }
 
   register_zend_hook();
 }
@@ -145,9 +242,7 @@ void shutdown_tracer() {
   if (OPENTELEMETRY_G(provider)->firstOneSpan()) {
     Provider::okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
     if (OPENTELEMETRY_G(enable_collect) && OPENTELEMETRY_G(provider)->isSampled()) {
-      auto request = OPENTELEMETRY_G(provider)->getRequest();
-      std::thread th = std::thread(&exporterOpentelemetry, request);
-      th.detach();
+      exporterOpentelemetry();
     }
     OPENTELEMETRY_G(provider)->clean();
   }
