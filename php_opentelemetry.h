@@ -178,6 +178,7 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   int max_time_consuming;
   char *log_path;
   char *grpc_endpoint;
+  char *message_queue_name;
   int grpc_max_message_size;
   int grpc_max_queue_length;
   int grpc_consumer;

@@ -23,22 +23,17 @@ void exporterOpentelemetry() {
 
   auto request = OPENTELEMETRY_G(provider)->getRequest();
   std::string msg = request->SerializePartialAsString();
-  std::string name = "opentelemetry_" + std::to_string(msg.size() % OPENTELEMETRY_G(grpc_consumer));
 
   try {
-
     message_queue mq(
-        open_or_create,
-        name.c_str(),
-        OPENTELEMETRY_G(grpc_max_queue_length),
-        OPENTELEMETRY_G(grpc_max_message_size),
-        boost::interprocess::permissions(0777)
+        open_only,
+        OPENTELEMETRY_G(message_queue_name)
     );
 
     int msg_length = static_cast<int>(msg.size());
     int max_length = OPENTELEMETRY_G(grpc_max_message_size);
     if (msg_length > max_length) {
-      log("[opentelemetry] message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length));
+      log("[opentelemetry] " + OPENTELEMETRY_G(provider)->firstOneSpan()->name() + " message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length));
       return;
     }
 
@@ -52,18 +47,7 @@ void exporterOpentelemetry() {
 
 }
 
-[[noreturn]] void consumer(const std::string &name) {
-
-  grpc::ChannelArguments args;
-  args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
-  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 1000);
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000);
-  auto otelExporter = new OtelExporter(grpc::CreateCustomChannel(
-      OPENTELEMETRY_G(grpc_endpoint), grpc::InsecureChannelCredentials(), args));
-
-  // 启动新线程，从队列中取出结果并处理
-  std::thread thread_ = std::thread(&OtelExporter::AsyncCompleteRpc, otelExporter);
-  thread_.detach();
+[[noreturn]] void consumer(int i, const std::string &name, OtelExporter *otelExporter) {
 
   try {
     //Open a message queue.
@@ -90,7 +74,55 @@ void exporterOpentelemetry() {
     }
 
   } catch (interprocess_exception &ex) {
-    log("[opentelemetry] consumer failed : " + std::string(ex.what()));
+    log("[opentelemetry] i : " + std::to_string(i) + " name : " + name + " consumer failed : " + std::string(ex.what()));
+  }
+}
+
+void init_grpc_consumers() {
+
+  clean_grpc_consumers();
+
+  try {
+    //Erase previous message queue
+    message_queue(
+        open_or_create,
+        OPENTELEMETRY_G(message_queue_name),
+        OPENTELEMETRY_G(grpc_max_queue_length),
+        OPENTELEMETRY_G(grpc_max_message_size),
+        permissions(0777)
+    );
+
+    log("open " + std::string(OPENTELEMETRY_G(message_queue_name)) + " message queue success .");
+
+    for (int i = 0; i < OPENTELEMETRY_G(grpc_consumer); i++) {
+
+      grpc::ChannelArguments args;
+      args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 100);
+      args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 100);
+      args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 100);
+      auto otelExporter = new OtelExporter(grpc::CreateCustomChannel(
+          OPENTELEMETRY_G(grpc_endpoint), grpc::InsecureChannelCredentials(), args));
+
+      // 启动新线程，从队列中取出结果并处理
+      std::thread asyncCompleteRpc(&OtelExporter::AsyncCompleteRpc, otelExporter);
+      asyncCompleteRpc.detach();
+
+      std::thread con(consumer, i, OPENTELEMETRY_G(message_queue_name), otelExporter);
+      con.detach();
+
+    }
+  } catch (interprocess_exception &ex) {
+    log("open flush message_queue ex : " + std::string(ex.what()));
+  }
+
+}
+
+void clean_grpc_consumers() {
+  try {
+    message_queue::remove(OPENTELEMETRY_G(message_queue_name));
+    log("remove " + std::string(OPENTELEMETRY_G(message_queue_name)) + " message queue success .");
+  } catch (interprocess_exception &ex) {
+    log("remove flush message_queue ex : " + std::string(ex.what()));
   }
 }
 
@@ -100,6 +132,8 @@ void opentelemetry_module_init() {
     return;
   }
 
+  OPENTELEMETRY_G(message_queue_name) = string2char("opentelemetry_" + std::to_string(getpid()));
+
   //初始化日志目录
   if (access(OPENTELEMETRY_G(log_path), 0) == -1) {
     php_stream_mkdir(OPENTELEMETRY_G(log_path), 0777, PHP_STREAM_MKDIR_RECURSIVE, nullptr);
@@ -107,33 +141,7 @@ void opentelemetry_module_init() {
 
   OPENTELEMETRY_G(ipv4) = get_current_machine_ip(DEFAULT_ETH_INF);
 
-  log("grpc_max_queue_length : " + std::to_string(OPENTELEMETRY_G(grpc_max_queue_length)));
-  log("grpc_max_message_size : " + std::to_string(OPENTELEMETRY_G(grpc_max_message_size)));
-
-  for (int i = 0; i < OPENTELEMETRY_G(grpc_consumer); i++) {
-
-    std::string name = "opentelemetry_" + std::to_string(i);
-    try {
-      message_queue::remove(name.c_str());
-      //Erase previous message queue
-      message_queue(
-          boost::interprocess::open_or_create,
-          name.c_str(),
-          OPENTELEMETRY_G(grpc_max_queue_length),
-          OPENTELEMETRY_G(grpc_max_message_size),
-          boost::interprocess::permissions(0777)
-      );
-
-      log("open " + name + " message queue success .");
-
-      std::thread th(consumer, name);
-      th.detach();
-
-    } catch (interprocess_exception &ex) {
-      log("open " + name + " flush message_queue ex : " + std::string(ex.what()));
-    }
-
-  }
+  init_grpc_consumers();
 
   register_zend_hook();
 }

@@ -6,12 +6,19 @@
 #define OPENTELEMETRY_CORE_H
 
 #include "php_opentelemetry.h"
+#include "include/otel_exporter.h"
 
 /**
  *
  * @param request
  */
 void exporterOpentelemetry();
+
+void init_grpc_consumers();
+
+void clean_grpc_consumers();
+
+[[noreturn]] void consumer(int i, const std::string &name, OtelExporter *otelExporter);
 
 /**
  *
