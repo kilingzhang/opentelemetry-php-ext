@@ -41,6 +41,9 @@ void exporterOpentelemetry() {
       log("[opentelemetry] send message_queue failed");
     }
 
+    msg.shrink_to_fit();
+    request->Clear();
+    delete request;
   } catch (interprocess_exception &ex) {
     log("[opentelemetry] send flush message_queue failed : " + std::string(ex.what()));
   }
@@ -69,6 +72,7 @@ void exporterOpentelemetry() {
         auto request = new opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest();
         request->ParseFromString(data);
         otelExporter->sendAsyncTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
+        request->Clear();
         delete request;
       }
       data.shrink_to_fit();
