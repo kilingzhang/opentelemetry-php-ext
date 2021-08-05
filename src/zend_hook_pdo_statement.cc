@@ -73,30 +73,28 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
         std::vector<std::string> items(std::sregex_token_iterator(source.begin(), source.end(), ws_re, -1),
                                        std::sregex_token_iterator());
 
-        std::string host;
-        std::string port;
-
         for (auto item:items) {
           std::vector<std::string> kv(std::sregex_token_iterator(item.begin(), item.end(), kv_re, -1),
                                       std::sregex_token_iterator());
           if (kv.size() >= 2) {
+
             if (kv[0] == "host") {
-              host = kv[1];
+
+              if (inet_addr(kv[1].c_str()) != INADDR_NONE) {
+                set_string_attribute(span->add_attributes(), "net.peer.ip", kv[1]);
+              } else {
+                set_string_attribute(span->add_attributes(), "net.peer.name", kv[1]);
+              }
+
             }
+
             if (kv[0] == "port") {
-              port = kv[1];
+              set_int64_attribute(span->add_attributes(), "net.peer.port", strtol(kv[1].c_str(), nullptr, 10));
             }
           }
         }
 
         set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
-
-        if (inet_addr(host.c_str()) != INADDR_NONE) {
-          set_string_attribute(span->add_attributes(), "net.peer.ip", host);
-        } else {
-          set_string_attribute(span->add_attributes(), "net.peer.name", host);
-        }
-        set_int64_attribute(span->add_attributes(), "net.peer.port", strtol(port.c_str(), nullptr, 10));
 
       }
     }
