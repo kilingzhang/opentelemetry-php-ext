@@ -176,7 +176,6 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   char *error_level;
   int sample_ratio_based;
   int max_time_consuming;
-  char *unix_socket;
   char *log_path;
   char *grpc_endpoint;
   int grpc_max_message_size;
