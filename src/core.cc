@@ -69,7 +69,9 @@ void exporterOpentelemetry() {
         auto request = new opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest();
         request->ParseFromString(data);
         otelExporter->sendAsyncTracer(request, OPENTELEMETRY_G(grpc_timeout_milliseconds));
+        delete request;
       }
+      data.shrink_to_fit();
 
     }
 
@@ -250,7 +252,9 @@ void shutdown_tracer() {
   if (OPENTELEMETRY_G(provider)->firstOneSpan()) {
     Provider::okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
     if (OPENTELEMETRY_G(enable_collect) && OPENTELEMETRY_G(provider)->isSampled()) {
+//      unsigned long s = get_unix_nanoseconds();
       exporterOpentelemetry();
+//      log("exporterOpentelemetry cost : " + std::to_string(double(get_unix_nanoseconds() - s) / 1000000.0) + "ms.");
     }
     OPENTELEMETRY_G(provider)->clean();
   }
