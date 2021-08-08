@@ -148,4 +148,5 @@ void unregister_zend_hook_pdo_statement() {
       }
     }
   }
+  pdoStmKeysCommands.clear();
 }

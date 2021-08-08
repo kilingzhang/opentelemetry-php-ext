@@ -134,7 +134,7 @@ void clean_grpc_consumers() {
 
 void opentelemetry_module_init() {
 
-  if (!is_enabled()) {
+  if (!is_enabled() || (is_cli_sapi() && !is_cli_enabled())) {
     return;
   }
 
@@ -147,13 +147,16 @@ void opentelemetry_module_init() {
 
   OPENTELEMETRY_G(ipv4) = get_current_machine_ip(DEFAULT_ETH_INF);
 
-  init_grpc_consumers();
+  if (!is_cli_sapi()) {
+    init_grpc_consumers();
+  }
 
   register_zend_hook();
 }
 
 void opentelemetry_module_shutdown() {
-  if (!is_enabled()) {
+
+  if (!is_enabled() || (is_cli_sapi() && !is_cli_enabled())) {
     return;
   }
   unregister_zend_hook();
@@ -181,6 +184,11 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 
   if (!is_has_provider()) {
     OPENTELEMETRY_G(provider) = new Provider();
+
+    if (is_cli_sapi()) {
+      init_grpc_consumers();
+    }
+
   }
 
   array_init(&OPENTELEMETRY_G(curl_header));

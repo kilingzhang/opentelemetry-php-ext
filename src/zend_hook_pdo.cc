@@ -48,12 +48,18 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
       }
     }
 
+    std::string source;
     uint32_t arg_count = ZEND_CALL_NUM_ARGS(execute_data);
     if (arg_count) {
       zval *p = ZEND_CALL_ARG(execute_data, 1);
       //db.statement
       switch (Z_TYPE_P(p)) {
-        case IS_STRING:set_string_attribute(span->add_attributes(), "db.statement", Z_STRVAL_P(p));
+        case IS_STRING:
+          if (function_name != "__construct") {
+            set_string_attribute(span->add_attributes(), "db.statement", Z_STRVAL_P(p));
+          } else {
+            source = Z_STRVAL_P(p);
+          }
           break;
       }
     }
@@ -69,12 +75,15 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
       }
 
       if (dbh->data_source != nullptr && db_type[0] != '\0') {
+        source = dbh->data_source;
+      }
 
-        set_string_attribute(span->add_attributes(), "db.connection_string", dbh->data_source);
+      if (!source.empty()) {
+
+        set_string_attribute(span->add_attributes(), "db.connection_string", source);
 
         std::regex ws_re(";");
         std::regex kv_re("=");
-        std::string source(dbh->data_source);
         std::vector<std::string> items(std::sregex_token_iterator(source.begin(), source.end(), ws_re, -1),
                                        std::sregex_token_iterator());
 
@@ -103,6 +112,7 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
         set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
 
       }
+
     }
 
     if (!is_set_db_system) {
@@ -157,4 +167,5 @@ void unregister_zend_hook_pdo() {
       }
     }
   }
+  pdoKeysCommands.clear();
 }

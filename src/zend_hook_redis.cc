@@ -113,7 +113,6 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
       set_string_attribute(span->add_attributes(), "db.statement", command);
     }
 
-    redisKeysCommands.clear();
     command.shrink_to_fit();
   }
 
@@ -199,4 +198,5 @@ void unregister_zend_hook_redis() {
       }
     }
   }
+  redisKeysCommands.clear();
 }

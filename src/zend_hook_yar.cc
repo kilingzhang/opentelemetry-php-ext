@@ -47,6 +47,8 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
       }
     }
 
+    set_string_attribute(span->add_attributes(), "rpc.system", COMPONENTS_YAR);
+
     zval *self = &(execute_data->This);
 #if PHP_VERSION_ID < 80000
     zval *obj = self;
@@ -92,7 +94,7 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
         std::string str = Z_STRVAL_P(&str_p);
 
         if (i == 1 && Z_TYPE_P(p) == IS_STRING) {
-          set_string_attribute(span->add_attributes(), "yar_client.method", Z_STRVAL_P(p));
+          set_string_attribute(span->add_attributes(), "rpc.method", Z_STRVAL_P(p));
         }
 
         std::transform(str.begin(), str.end(), str.begin(), ::tolower);
@@ -106,13 +108,13 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
       if (!command.empty()) {
         std::transform(command.begin(), command.end(), command.begin(), ::tolower);
         command = trim(command);
-        set_string_attribute(span->add_attributes(), "yar_client.call", command);
+        set_string_attribute(span->add_attributes(), "rpc.call", command);
         zval *zval_uri = read_object_property(self, "_uri", 0);
         /* 检索uri属性的值 */
         if (zval_uri) {
           zval copy_zval_uri;
           ZVAL_DUP(&copy_zval_uri, zval_uri);
-          set_string_attribute(span->add_attributes(), "yar_client.uri", ZSTR_VAL(Z_STR(copy_zval_uri)));
+          set_string_attribute(span->add_attributes(), "rpc.service", ZSTR_VAL(Z_STR(copy_zval_uri)));
           zval_dtor(&copy_zval_uri);
         }
       }
@@ -164,7 +166,7 @@ void opentelemetry_yar_server_handler(INTERNAL_FUNCTION_PARAMETERS) {
   if (is_has_provider()) {
 
     std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
-    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_INTERNAL);
+    span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_SERVER);
 
     span->set_parent_span_id(parentId);
     zend_execute_data *caller = execute_data->prev_execute_data;
@@ -174,12 +176,9 @@ void opentelemetry_yar_server_handler(INTERNAL_FUNCTION_PARAMETERS) {
         set_string_attribute(span->add_attributes(), "code.stacktrace", code_stacktrace);
       }
     }
-
-    uint32_t arg_count = ZEND_CALL_NUM_ARGS(execute_data);
-    if (arg_count) {
-
-    }
   }
+
+  set_string_attribute(span->add_attributes(), "rpc.system", COMPONENTS_YAR);
 
   if (!opentelemetry_yar_server_original_handler_map.empty() &&
       opentelemetry_yar_server_original_handler_map.find(cmd) !=
@@ -251,4 +250,6 @@ void unregister_zend_hook_yar() {
       }
     }
   }
+  clientKeysCommands.clear();
+  serverKeysCommands.clear();
 }

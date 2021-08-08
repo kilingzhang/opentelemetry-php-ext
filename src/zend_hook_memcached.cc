@@ -82,8 +82,7 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
           zval server;
           zval params[1];
           ZVAL_STRING(&params[0], str.c_str());
-          zend_call_method(obj, Z_OBJCE_P(self), nullptr, ZEND_STRL("getserverbykey"), &server, 1, params,
-                           nullptr);
+          zend_call_method(obj, Z_OBJCE_P(self), nullptr, ZEND_STRL("getserverbykey"), &server, 1, params, nullptr);
           zval *str_zval;
           long long port = 0;
           str_zval = zend_hash_str_find(Z_ARRVAL_P(&server), "host", 4);
@@ -182,4 +181,6 @@ void unregister_zend_hook_memcached() {
       }
     }
   }
+  mecKeysCommands.clear();
+  mecStrKeysCommands.clear();
 }

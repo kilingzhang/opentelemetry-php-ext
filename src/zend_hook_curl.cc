@@ -91,6 +91,7 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
     std::string parentId = OPENTELEMETRY_G(provider)->firstOneSpan()->span_id();
     span = OPENTELEMETRY_G(provider)->createSpan(php_url_path == nullptr ? "/" : php_url_path, Span_SpanKind_SPAN_KIND_CLIENT);
     span->set_parent_span_id(parentId);
+    //TODO http.method
     set_string_attribute(span->add_attributes(), "http.scheme", php_url_scheme == nullptr ? "" : php_url_scheme);
     set_string_attribute(span->add_attributes(), "http.host", php_url_host == nullptr ? "" : php_url_host);
     set_string_attribute(span->add_attributes(), "http.target", php_url_path == nullptr ? "" : (php_url_path + (php_url_query == nullptr ? "" : "?" + std::string(php_url_query))));
@@ -100,7 +101,7 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
     std::string tracestate = Provider::formatTraceStateHeader();
     add_next_index_string(option, ("tracestate: " + tracestate).c_str());
 
-    set_string_attribute(span->add_attributes(), "http.header", opentelemetry_json_encode(option));
+//    set_string_attribute(span->add_attributes(), "http.header", opentelemetry_json_encode(option));
 
     traceparent.shrink_to_fit();
     tracestate.shrink_to_fit();

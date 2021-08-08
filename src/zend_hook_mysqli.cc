@@ -165,4 +165,5 @@ void unregister_zend_hook_mysqli() {
       old_function->internal_function.handler = opentelemetry_mysqli_original_handler_map[item.c_str()];
     }
   }
+  mysqliKeysCommands.clear();
 }
