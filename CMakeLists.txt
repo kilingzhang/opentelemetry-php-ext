@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.8)
 ENABLE_LANGUAGE(ASM)
 set(OPENTELEMETRY_VERSION 1.0)
 project(opentelemetry VERSION ${OPENTELEMETRY_VERSION})
+
+add_compile_definitions(HAVE_OPENTELEMETRY)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g -Wdefaulted-function-deleted")
@@ -27,14 +29,10 @@ file(GLOB_RECURSE SRC_LIST FOLLOW_SYMLINKS src/*.c src/*.cc
     )
 file(GLOB_RECURSE HEAD_FILES FOLLOW_SYMLINKS config.h include/*.h)
 
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-
 #add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DZTS)
 
 include_directories(BEFORE ./include ext-src/ ./)
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
 execute_process(COMMAND php-config --includes OUTPUT_VARIABLE PHP_INCLUDES OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(COMMAND php-config --extension-dir OUTPUT_VARIABLE PHP_EXTENSION_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -114,8 +112,5 @@ add_dependencies(ext-opentelemetry lib-opentelemetry)
 target_include_directories(ext-opentelemetry PRIVATE ${OPENTELEMETRY_CPP_INCLUDE_DIRS})
 target_link_libraries(ext-opentelemetry ${OPENTELEMETRY_C_FLAGS} opentelemetry)
 
-#install
-INSTALL(CODE "MESSAGE(\"Are you run command using root user?\")")
-INSTALL(TARGETS lib-opentelemetry LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-INSTALL(FILES ${HEAD_FILES} DESTINATION php_opentelemetry)
-INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/config.h DESTINATION php_opentelemetry)
+add_custom_target(build.sh
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
