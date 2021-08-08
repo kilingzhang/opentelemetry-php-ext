@@ -148,9 +148,8 @@ void register_zend_hook_memcached() {
       "getmulti", "getmultibykey", "getallkeys", "delete", "deletebykey", "deletemulti",
       "deletemultibykey", "increment", "incrementbykey", "decrement", "decrementbykey", "getstats",
       "ispersistent", "ispristine", "flush", "flushbuffers", "getdelayed", "getdelayedbykey", "fetch",
-      "fetchall", "addserver", "addservers", "getoption", "setoption", "setoptions", "getresultcode",
-      "getserverlist", "resetserverlist", "getversion", "quit", "setsaslauthdata", "touch",
-      "touchbykey"};
+      "fetchall", "getresultcode", "getserverlist", "resetserverlist", "getversion", "quit", "setsaslauthdata", "touch", "touchbykey"
+  };
   mecStrKeysCommands = {"set", "setbykey", "setmulti", "setmultibykey", "add", "addbykey", "replace", "replacebykey",
       "append", "appendbykey", "prepend", "prependbykey", "cas", "casbykey", "get", "getbykey",
       "getmulti", "getmultibykey", "getallkeys", "delete", "deletebykey", "deletemulti",
