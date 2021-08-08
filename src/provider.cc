@@ -125,7 +125,7 @@ bool Provider::isSampled() {
       return true;
     }
   }
-  
+
   unsigned long time_consuming = get_unix_nanoseconds() - OPENTELEMETRY_G(provider)->firstOneSpan()->start_time_unix_nano();
   time_consuming /= 1000000;
   return time_consuming >= OPENTELEMETRY_G(max_time_consuming);
@@ -143,9 +143,10 @@ void Provider::setSampled(bool isSampled) {
 void Provider::clean() {
   if (!is_cli_sapi()) {
     if (request) {
-      request = nullptr;
       resourceSpan = nullptr;
       firstSpan = nullptr;
+      request->Clear();
+      request = nullptr;
     }
   } else {
     pid_t ppid = get_current_ppid();
@@ -153,6 +154,7 @@ void Provider::clean() {
       firstSpans.erase(ppid);
       resourceSpans.erase(ppid);
       requests.erase(ppid);
+      requests[ppid]->Clear();
     }
   }
 }

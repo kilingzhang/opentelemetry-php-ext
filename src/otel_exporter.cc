@@ -79,7 +79,7 @@ void OtelExporter::AsyncCompleteRpc() {
     GPR_ASSERT(ok);
 
     if (!call->status.ok()) {
-      log("[opentelemetry] Export() failed: " + call->status.error_message());
+//      log("[opentelemetry] Export() failed: " + call->status.error_message());
     }
     // Once we're complete, deallocate the call object.
     delete call;
