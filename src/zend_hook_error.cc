@@ -58,14 +58,12 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
       break;
   }
 
-  if (level == "PHP_ERROR_WARNING" && is_equal("E_ERROR", OPENTELEMETRY_G(error_level))) {
+  //E_ALL E_WARNING E_ERROR E_NONE
+  if (is_equal("E_NONE", OPENTELEMETRY_G(error_level))) {
     isCollector = false;
-  }
-
-  if (level == "PHP_ERROR_" && (
-      is_equal("E_ERROR", OPENTELEMETRY_G(error_level)) ||
-          is_equal("E_WARNING", OPENTELEMETRY_G(error_level))
-  )) {
+  } else if (is_equal("E_ERROR", OPENTELEMETRY_G(error_level)) && (level == "PHP_ERROR_WARNING" || level == "PHP_ERROR_NOTICE")) {
+    isCollector = false;
+  } else if (is_equal("E_WARNING", OPENTELEMETRY_G(error_level)) && (level == "PHP_ERROR_NOTICE")) {
     isCollector = false;
   }
 
