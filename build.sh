@@ -25,6 +25,6 @@ find opentelemetry -name "*.lo*" | while read id; do rm -rf $id; done
 find opentelemetry -name ".libs" | while read id; do rm -rf $id; done
 find src -name "*.lo*" | while read id; do rm -rf $id; done
 find src -name ".libs" | while read id; do rm -rf $id; done
-#cp opentelemetry.ini $PHP_INI_SCAN_DIR"docker-php-ext-opentelemetry.ini"
+cp opentelemetry.ini $PHP_INI_DIR"/conf.d/docker-php-ext-opentelemetry.ini"
 php -m | grep opentelemetry
 php -d enable_dl=On opentelemetry.php -debug=on

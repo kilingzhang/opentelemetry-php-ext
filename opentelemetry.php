@@ -22,6 +22,8 @@ try{
     $redis->set("opentelemetry","opentelemetry");
     $redis->get("opentelemetry");
     unset($redis);
+    $ch = curl_init("https://api.github.com/repos");
+    curl_exec($ch);
 }catch(Throwable $e){
 }
 echo 'ing memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n";
