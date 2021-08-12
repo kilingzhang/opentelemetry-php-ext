@@ -143,17 +143,19 @@ void Provider::setSampled(bool isSampled) {
 void Provider::clean() {
   if (!is_cli_sapi()) {
     if (request) {
-      request->Clear();
       resourceSpan = nullptr;
       firstSpan = nullptr;
+      request->Clear();
+      delete request;
       request = nullptr;
     }
   } else {
     pid_t ppid = get_current_ppid();
     if (requests.find(ppid) != requests.end()) {
-      requests[ppid]->Clear();
       firstSpans.erase(ppid);
       resourceSpans.erase(ppid);
+      requests[ppid]->Clear();
+      delete requests[ppid];
       requests.erase(ppid);
     }
   }

@@ -42,8 +42,6 @@ void exporterOpentelemetry() {
     }
 
     msg.shrink_to_fit();
-    request->Clear();
-    delete request;
   } catch (interprocess_exception &ex) {
     log("[opentelemetry] send flush message_queue failed : " + std::string(ex.what()));
   }
