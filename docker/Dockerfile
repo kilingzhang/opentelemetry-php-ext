@@ -75,6 +75,8 @@ RUN set -eux; \
     pecl install --onlyreqdeps --nobuild memcached; \
     cd "${peclDir}/memcached"; \
     phpize; \
+    ./configure ; \
+    make && make install; \
     # yar
     pecl install --onlyreqdeps --nobuild yar-2.0.4; \
     cd "${peclDir}/yar"; \
@@ -100,6 +102,12 @@ RUN set -eux; \
     rm -rf /tmp/pear ~/.pearrc; \
     apk del --no-network .sinasrv-build-deps; \
     rm -f /var/cache/apk/*;
+
+RUN set -eux; \
+    echo "extension=redis.so" >> /usr/local/etc/php/conf.d/docker-php-ext-redis.ini; \
+    echo "extension=memcached.so" >> /usr/local/etc/php/conf.d/docker-php-ext-memcached.ini; \
+    echo "extension=yar.so" >> /usr/local/etc/php/conf.d/docker-php-ext-yar.ini; \
+    echo "extension=swoole.so" >> /usr/local/etc/php/conf.d/docker-php-ext-swoole.ini;
 
 ADD . /var/opentelemetry-php-ext
 RUN set -eux; \
