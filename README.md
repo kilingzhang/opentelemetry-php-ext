@@ -24,6 +24,34 @@ opentelemetry php 客户端。php扩展、底层无侵入埋点。无接入成�
 
 ## 快速开始
 
+```
+git clone https://github.com/kilingzhang/opentelemetry-php-ext.git
+```
+
+```
+cd opentelemetry-php-ext
+```
+```
+docker run -itd \
+--name=otel_container \
+--net=host \
+--restart=always \
+-v "${PWD}/examples/otel-config.yaml":/otel-local-config.yaml  \
+ otel/opentelemetry-collector --config otel-local-config.yaml 
+```
+```
+docker run  -itd  \
+--name=opentelemetry_php_container \
+--net=host \
+kilingzhang/opentelemetry-php-fpm-alpine:7.1
+```
+
+
+## 编译
+
+```
+make docker-build
+```
 
 
 ## 配置
