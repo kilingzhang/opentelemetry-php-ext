@@ -1,20 +1,21 @@
 # opentelemetry-php-ext
 
 ## 简介
+
 opentelemetry php 客户端。php扩展、底层无侵入埋点。无接入成本。尤其追求性能及可用性优化。
 
 ## 支持
 
 - [x] Trace
-  - [x] CURL
-  - [x] PDO
-  - [x] Mysqli
-  - [x] Yar Client
-  - [x] Yar Server
-  - [x] Redis Extension
-  - [x] Memcache Extension
-  - [ ] GRPC Client
-  - [ ] Swoole
+    - [x] CURL
+    - [x] PDO
+    - [x] Mysqli
+    - [x] Yar Client
+    - [x] Yar Server
+    - [x] Redis Extension
+    - [x] Memcache Extension
+    - [ ] GRPC Client
+    - [ ] Swoole
 - [ ] Metric
 - [ ] Logging
 
@@ -31,6 +32,7 @@ git clone https://github.com/kilingzhang/opentelemetry-php-ext.git
 ```
 cd opentelemetry-php-ext
 ```
+
 ```
 docker run -itd \
 --name=otel_container \
@@ -39,6 +41,7 @@ docker run -itd \
 -v "${PWD}/examples/otel-config.yaml":/otel-local-config.yaml  \
  otel/opentelemetry-collector --config otel-local-config.yaml 
 ```
+
 ```
 docker run  -itd  \
 --name=opentelemetry_php_container \
@@ -46,13 +49,11 @@ docker run  -itd  \
 kilingzhang/opentelemetry-php-fpm-alpine:7.1
 ```
 
-
-## 编译
+## 编译镜像
 
 ```
-make docker-build
+./build_docker.sh
 ```
-
 
 ## 配置
 
