@@ -210,6 +210,9 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
     uri = find_server_string("SCRIPT_NAME", sizeof("SCRIPT_NAME") - 1);
     zval *argv = find_server_zval("argv", sizeof("argv") - 1);
     ZVAL_DUP(&copy_value, argv);
+    if (kind == Span_SpanKind_SPAN_KIND_UNSPECIFIED) {
+      kind = Span_SpanKind_SPAN_KIND_INTERNAL;
+    }
     auto span = OPENTELEMETRY_G(provider)->createFirstSpan(uri, kind);
     OPENTELEMETRY_G(provider)->parseTraceParent(traceparent);
     OPENTELEMETRY_G(provider)->parseTraceState(tracestate);

@@ -101,7 +101,7 @@ RUN set -eux; \
     apk del --no-network .sinasrv-build-deps; \
     rm -f /var/cache/apk/*;
 
+ADD . /var/opentelemetry-php-ext
 RUN set -eux; \
-    git clone --recurse-submodules --recursive https://github.com/kilingzhang/opentelemetry-php-ext.git  /var/opentelemetry-php-ext ; \
-    cd /var/opentelemetry-php-ext ; \
+    cd /var/opentelemetry-php-ext && git submodule update --init --recursive ; \
     ./build.sh ;
