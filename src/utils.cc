@@ -240,7 +240,7 @@ bool starts_with(const char *pre, const char *str) {
 
 long get_unix_nanoseconds() {
   auto ms = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      std::chrono::system_clock::now().time_since_epoch());
+      std::chrono::steady_clock::now().time_since_epoch());
   return ms.count();
 }
 

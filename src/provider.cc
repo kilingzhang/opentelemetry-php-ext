@@ -14,6 +14,7 @@
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 
 using namespace opentelemetry::proto::trace::v1;
+using namespace opentelemetry::proto::resource::v1;
 using namespace opentelemetry::proto::collector::trace::v1;
 
 Provider::Provider() = default;
@@ -31,23 +32,30 @@ ExportTraceServiceRequest *Provider::getRequest() {
   }
 }
 
+Resource *Provider::getResource() {
+  if (!is_cli_sapi()) {
+    return resource;
+  } else {
+    pid_t ppid = get_current_ppid();
+    return resources[ppid];
+  }
+}
+
 ResourceSpans *Provider::getTracer() {
-  char name[256] = {0};
-  gethostname(name, sizeof(name));
   if (!is_cli_sapi()) {
     if (!request) {
       request = new ExportTraceServiceRequest();
       resourceSpan = request->add_resource_spans();
-      auto resource = resourceSpan->resource().New();
+      resource = resourceSpan->resource().New();
       resource->set_dropped_attributes_count(0);
       set_string_attribute(resource->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
       set_string_attribute(resource->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
-      set_string_attribute(resource->add_attributes(), "net.host.name", name);
+      set_string_attribute(resource->add_attributes(), "net.host.name", OPENTELEMETRY_G(hostname));
       set_string_attribute(resource->add_attributes(), "os.type", PLATFORM_NAME);
       set_string_attribute(resource->add_attributes(), "process.pid", std::to_string(getpid()));
       set_string_attribute(resource->add_attributes(), "telemetry.sdk.language", "php");
       set_string_attribute(resource->add_attributes(), "deployment.environment", OPENTELEMETRY_G(environment));
-      resourceSpan->set_allocated_resource(resource);
+//      resourceSpan->set_allocated_resource(resource);
     }
     return resourceSpan;
   } else {
@@ -57,16 +65,16 @@ ResourceSpans *Provider::getTracer() {
     } else {
       requests[ppid] = new ExportTraceServiceRequest();
       resourceSpans[ppid] = requests[ppid]->add_resource_spans();
-      auto resource = resourceSpans[ppid]->resource().New();
-      resource->set_dropped_attributes_count(0);
-      set_string_attribute(resource->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
-      set_string_attribute(resource->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
-      set_string_attribute(resource->add_attributes(), "net.host.name", name);
-      set_string_attribute(resource->add_attributes(), "os.type", PLATFORM_NAME);
-      set_string_attribute(resource->add_attributes(), "process.pid", std::to_string(getpid()));
-      set_string_attribute(resource->add_attributes(), "telemetry.sdk.language", "php");
-      set_string_attribute(resource->add_attributes(), "deployment.environment", OPENTELEMETRY_G(environment));
-      resourceSpans[ppid]->set_allocated_resource(resource);
+      resources[ppid] = resourceSpans[ppid]->resource().New();
+      resources[ppid]->set_dropped_attributes_count(0);
+      set_string_attribute(resources[ppid]->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
+      set_string_attribute(resources[ppid]->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
+      set_string_attribute(resources[ppid]->add_attributes(), "net.host.name", OPENTELEMETRY_G(hostname));
+      set_string_attribute(resources[ppid]->add_attributes(), "os.type", PLATFORM_NAME);
+      set_string_attribute(resources[ppid]->add_attributes(), "process.pid", std::to_string(getpid()));
+      set_string_attribute(resources[ppid]->add_attributes(), "telemetry.sdk.language", "php");
+      set_string_attribute(resources[ppid]->add_attributes(), "deployment.environment", OPENTELEMETRY_G(environment));
+//      resourceSpans[ppid]->set_allocated_resource(resources[ppid]);
       return resourceSpans[ppid];
     }
   }
@@ -167,10 +175,16 @@ void Provider::addTraceStates(const std::string &key, const std::string &value) 
   if (!is_cli_sapi()) {
     states[key] = value;
     traceStates = states;
+    if (key == "uid") {
+      set_string_attribute(resource->add_attributes(), "uid", value);
+    }
   } else {
     pid_t ppid = get_current_ppid();
     states_map[ppid][key] = value;
     traceStates = states_map[ppid];
+    if (key == "uid") {
+      set_string_attribute(resources[ppid]->add_attributes(), "uid", value);
+    }
   }
   auto iter = traceStates.begin();
   bool first = true;
@@ -192,11 +206,11 @@ tsl::robin_map<std::string, std::string> Provider::getTraceStates() {
     return states;
   } else {
     pid_t ppid = get_current_ppid();
-    if (states_map.find(ppid) != states_map.end()) {
-      return states_map[ppid];
+    if (states_map.find(ppid) == states_map.end()) {
+      states_map[ppid] = tsl::robin_map<std::string, std::string>();
     }
+    return states_map[ppid];
   }
-  return {};
 }
 
 void Provider::parseTraceParent(const std::string &traceparent) {
@@ -209,11 +223,7 @@ void Provider::parseTraceParent(const std::string &traceparent) {
       setSampled(kv[3] == "01");
     }
   } else {
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_int_distribution<int> dist(1, OPENTELEMETRY_G(sample_ratio_based));
-    int d = dist(mt);
-    if (OPENTELEMETRY_G(sample_ratio_based) == 1 || d == OPENTELEMETRY_G(sample_ratio_based)) {
+    if (OPENTELEMETRY_G(sample_ratio_based) == 1 || get_unix_nanoseconds() % OPENTELEMETRY_G(sample_ratio_based) == 0) {
       setSampled(true);
     } else if (OPENTELEMETRY_G(sample_ratio_based) == 0) {
       setSampled(false);

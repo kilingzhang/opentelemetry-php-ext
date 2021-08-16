@@ -20,6 +20,8 @@ class Provider {
 
   opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *getRequest();
 
+  opentelemetry::proto::resource::v1::Resource *getResource();
+
   opentelemetry::proto::trace::v1::ResourceSpans *getTracer();
 
   opentelemetry::proto::trace::v1::Span *createFirstSpan(const std::string &name, opentelemetry::proto::trace::v1::Span_SpanKind kind);
@@ -51,7 +53,9 @@ class Provider {
 
  private:
   opentelemetry::proto::trace::v1::ResourceSpans *resourceSpan = nullptr;
+  opentelemetry::proto::resource::v1::Resource *resource = nullptr;
   tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::ResourceSpans *> resourceSpans;
+  tsl::robin_map<pid_t, opentelemetry::proto::resource::v1::Resource *> resources;
   opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request = nullptr;
   tsl::robin_map<pid_t, opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *> requests;
   opentelemetry::proto::trace::v1::Span *firstSpan = nullptr;

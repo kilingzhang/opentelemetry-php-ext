@@ -120,19 +120,14 @@ PHP_FUNCTION (opentelemetry_add_tracestate) {
 PHP_FUNCTION (opentelemetry_set_sample_ratio_based) {
   if (is_has_provider()) {
     long ratio_based;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l",
-                              &ratio_based) == SUCCESS) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &ratio_based) == SUCCESS) {
       if (ratio_based == 0) {
         OPENTELEMETRY_G(provider)->setSampled(false);
       } else if (ratio_based == 1) {
         OPENTELEMETRY_G(provider)->setSampled(true);
       } else {
         std::string traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
-        std::random_device rd;
-        std::mt19937 mt(rd());
-        std::uniform_int_distribution<int> dist(1, (int) ratio_based);
-        int d = dist(mt);
-        if ((traceparent.empty() && d == ratio_based) ||
+        if ((traceparent.empty() && get_unix_nanoseconds() % OPENTELEMETRY_G(sample_ratio_based) == 0) ||
             (!traceparent.empty() && ratio_based == 1)) {
           OPENTELEMETRY_G(provider)->setSampled(true);
         }

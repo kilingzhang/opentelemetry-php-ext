@@ -187,6 +187,7 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   std::string ipv4;
   zval curl_header;
   bool is_started_cli_tracer;
+  char hostname[256] = {0};
 ZEND_END_MODULE_GLOBALS(opentelemetry)
 ZEND_EXTERN_MODULE_GLOBALS(opentelemetry)
 

@@ -138,6 +138,7 @@ void opentelemetry_module_init() {
 
   OPENTELEMETRY_G(message_queue_name) = string2char("opentelemetry_" + std::to_string(getpid()));
 
+  gethostname(OPENTELEMETRY_G(hostname), sizeof(OPENTELEMETRY_G(hostname)));
   //初始化日志目录
   if (access(OPENTELEMETRY_G(log_path), 0) == -1) {
     php_stream_mkdir(OPENTELEMETRY_G(log_path), 0777, PHP_STREAM_MKDIR_RECURSIVE, nullptr);
@@ -264,6 +265,7 @@ void shutdown_tracer() {
 
   if (OPENTELEMETRY_G(provider)->firstOneSpan()) {
     Provider::okEnd(OPENTELEMETRY_G(provider)->firstOneSpan());
+    OPENTELEMETRY_G(provider)->getTracer()->set_allocated_resource(OPENTELEMETRY_G(provider)->getResource());
     if (OPENTELEMETRY_G(enable_collect) && OPENTELEMETRY_G(provider)->isSampled()) {
 //      unsigned long s = get_unix_nanoseconds();
       exporterOpentelemetry();
