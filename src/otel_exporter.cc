@@ -34,7 +34,7 @@ void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int 
 
   grpc::Status status = stub_->Export(&context, *request, &response);
 
-  if (!status.ok()) {
+  if (!status.ok() && is_debug()) {
     log("[opentelemetry] Export() failed: " + status.error_message() + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)));
     return;
   }
@@ -78,8 +78,8 @@ void OtelExporter::AsyncCompleteRpc() {
     // corresponds solely to the request for updates introduced by Finish().
     GPR_ASSERT(ok);
 
-    if (!call->status.ok()) {
-//      log("[opentelemetry] Export() failed: " + call->status.error_message());
+    if (!call->status.ok() && is_debug()) {
+      log("[opentelemetry] Export() failed: " + call->status.error_message());
     }
     // Once we're complete, deallocate the call object.
     delete call;

@@ -175,17 +175,12 @@ void Provider::addTraceStates(const std::string &key, const std::string &value) 
   if (!is_cli_sapi()) {
     states[key] = value;
     traceStates = states;
-    if (key == "uid") {
-      set_string_attribute(resource->add_attributes(), "uid", value);
-    }
   } else {
     pid_t ppid = get_current_ppid();
     states_map[ppid][key] = value;
     traceStates = states_map[ppid];
-    if (key == "uid") {
-      set_string_attribute(resources[ppid]->add_attributes(), "uid", value);
-    }
   }
+  set_string_attribute(resource->add_attributes(), key, value);
   auto iter = traceStates.begin();
   bool first = true;
   while (iter != traceStates.end()) {
@@ -223,7 +218,7 @@ void Provider::parseTraceParent(const std::string &traceparent) {
       setSampled(kv[3] == "01");
     }
   } else {
-    if (OPENTELEMETRY_G(sample_ratio_based) == 1 || get_unix_nanoseconds() % OPENTELEMETRY_G(sample_ratio_based) == 0) {
+    if (OPENTELEMETRY_G(sample_ratio_based) == 1 || get_unix_nanoseconds() % (OPENTELEMETRY_G(sample_ratio_based) * 1000) == 0) {
       setSampled(true);
     } else if (OPENTELEMETRY_G(sample_ratio_based) == 0) {
       setSampled(false);
