@@ -22,17 +22,17 @@ class OtelExporter {
 
   // struct for keeping state and data information
   struct AsyncClientCall {
-    // Container for the data we expect from the server.
-    opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse response;
+	// Container for the data we expect from the server.
+	opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse response;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
-    grpc::ClientContext context;
+	// Context for the client. It could be used to convey extra information to
+	// the server and/or tweak certain RPC behaviors.
+	grpc::ClientContext context;
 
-    // Storage for the status of the RPC upon completion.
-    grpc::Status status;
+	// Storage for the status of the RPC upon completion.
+	grpc::Status status;
 
-    std::unique_ptr<grpc::ClientAsyncResponseReader<opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse>> response_reader;
+	std::unique_ptr<grpc::ClientAsyncResponseReader<opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse>> response_reader;
   };
  public:
   explicit OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channel);

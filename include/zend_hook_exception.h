@@ -13,7 +13,6 @@ void unregister_zend_hook_exception();
 
 #if PHP_VERSION_ID < 80000
 
-
 void opentelemetry_throw_exception_hook(zval *exception);
 
 #else
@@ -21,6 +20,5 @@ void opentelemetry_throw_exception_hook(zval *exception);
 void opentelemetry_throw_exception_hook(zend_object *ex);
 
 #endif
-
 
 #endif //OPENTELEMETRY_ZEND_HOOK_EXCEPTION_H

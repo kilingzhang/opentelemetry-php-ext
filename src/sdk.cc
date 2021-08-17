@@ -20,34 +20,34 @@ using namespace opentelemetry::proto::trace::v1;
  */
 PHP_FUNCTION (opentelemetry_start_cli_tracer) {
 
-  //非cli模式 或 未开启cli模块收集
-  if (!is_cli_sapi() || !is_cli_enabled() || is_started_cli_tracer()) {
-    RETURN_FALSE;
-  }
+	//非cli模式 或 未开启cli模块收集
+	if (!is_cli_sapi() || !is_cli_enabled() || is_started_cli_tracer()) {
+		RETURN_FALSE;
+	}
 
-  char *traceparent = nullptr;
-  size_t traceparent_len;
-  char *tracestate = nullptr;
-  size_t tracestate_len;
-  long kind = 0;
+	char *traceparent = nullptr;
+	size_t traceparent_len;
+	char *tracestate = nullptr;
+	size_t tracestate_len;
+	long kind = 0;
 
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ssl",
-                            &traceparent, &traceparent_len, &tracestate, &tracestate_len, &kind) == FAILURE) {
-    RETURN_FALSE;
-  }
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ssl",
+							  &traceparent, &traceparent_len, &tracestate, &tracestate_len, &kind) == FAILURE) {
+		RETURN_FALSE;
+	}
 
-  OPENTELEMETRY_G(is_started_cli_tracer) = true;
+	OPENTELEMETRY_G(is_started_cli_tracer) = true;
 
-  if (traceparent && tracestate) {
-    start_tracer(traceparent, tracestate, (Span_SpanKind) kind);
-  } else if (traceparent && !tracestate) {
-    start_tracer(traceparent, "", (Span_SpanKind) kind);
-  } else if (!traceparent && tracestate) {
-    start_tracer("", tracestate, (Span_SpanKind) kind);
-  } else {
-    start_tracer("", "", (Span_SpanKind) kind);
-  }
-  RETURN_TRUE;
+	if (traceparent && tracestate) {
+		start_tracer(traceparent, tracestate, (Span_SpanKind) kind);
+	} else if (traceparent && !tracestate) {
+		start_tracer(traceparent, "", (Span_SpanKind) kind);
+	} else if (!traceparent && tracestate) {
+		start_tracer("", tracestate, (Span_SpanKind) kind);
+	} else {
+		start_tracer("", "", (Span_SpanKind) kind);
+	}
+	RETURN_TRUE;
 }
 
 /**
@@ -57,13 +57,13 @@ PHP_FUNCTION (opentelemetry_start_cli_tracer) {
  */
 PHP_FUNCTION (opentelemetry_shutdown_cli_tracer) {
 
-  //非cli模式 或 未开启cli模块收集
-  if (!is_cli_sapi() || !is_cli_enabled() || !is_started_cli_tracer()) {
-    RETURN_FALSE;
-  }
+	//非cli模式 或 未开启cli模块收集
+	if (!is_cli_sapi() || !is_cli_enabled() || !is_started_cli_tracer()) {
+		RETURN_FALSE;
+	}
 
-  shutdown_tracer();
-  RETURN_TRUE;
+	shutdown_tracer();
+	RETURN_TRUE;
 }
 
 /**
@@ -72,11 +72,11 @@ PHP_FUNCTION (opentelemetry_shutdown_cli_tracer) {
  * @param return_value
  */
 PHP_FUNCTION (opentelemetry_get_traceparent) {
-  if (is_has_provider()) {
-    std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(OPENTELEMETRY_G(provider)->firstOneSpan());
-    RETURN_STRING(string2char(traceparent));
-  }
-  RETURN_STRING("");
+	if (is_has_provider()) {
+		std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(OPENTELEMETRY_G(provider)->firstOneSpan());
+		RETURN_STRING(string2char(traceparent));
+	}
+	RETURN_STRING("");
 }
 
 /**
@@ -85,31 +85,31 @@ PHP_FUNCTION (opentelemetry_get_traceparent) {
  * @param return_value
  */
 PHP_FUNCTION (opentelemetry_get_tracestate) {
-  if (is_has_provider()) {
-    std::string tracestate = Provider::formatTraceStateHeader();
-    RETURN_STRING(string2char(tracestate));
-  }
-  RETURN_STRING("");
+	if (is_has_provider()) {
+		std::string tracestate = Provider::formatTraceStateHeader();
+		RETURN_STRING(string2char(tracestate));
+	}
+	RETURN_STRING("");
 }
 
 PHP_FUNCTION (opentelemetry_add_tracestate) {
 
-  if (is_has_provider()) {
-    char *key = nullptr;
-    size_t key_len;
-    char *value = nullptr;
-    size_t value_len;
+	if (is_has_provider()) {
+		char *key = nullptr;
+		size_t key_len;
+		char *value = nullptr;
+		size_t value_len;
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss",
-                              &key, &key_len, &value, &value_len) == FAILURE) {
-      RETURN_FALSE;
-    }
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss",
+								  &key, &key_len, &value, &value_len) == FAILURE) {
+			RETURN_FALSE;
+		}
 
-    OPENTELEMETRY_G(provider)->addTraceStates(key, value);
+		OPENTELEMETRY_G(provider)->addTraceStates(key, value);
 
-    RETURN_TRUE;
-  }
-  RETURN_FALSE;
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
 }
 
 /**
@@ -118,23 +118,23 @@ PHP_FUNCTION (opentelemetry_add_tracestate) {
  * @param return_value
  */
 PHP_FUNCTION (opentelemetry_set_sample_ratio_based) {
-  if (is_has_provider()) {
-    long ratio_based;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &ratio_based) == SUCCESS) {
-      if (ratio_based == 0) {
-        OPENTELEMETRY_G(provider)->setSampled(false);
-      } else if (ratio_based == 1) {
-        OPENTELEMETRY_G(provider)->setSampled(true);
-      } else {
-        std::string traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
-        if ((traceparent.empty() && get_unix_nanoseconds() % (OPENTELEMETRY_G(sample_ratio_based) * 1000) == 0) ||
-            (!traceparent.empty() && ratio_based == 1)) {
-          OPENTELEMETRY_G(provider)->setSampled(true);
-        }
-      }
+	if (is_has_provider()) {
+		long ratio_based;
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &ratio_based) == SUCCESS) {
+			if (ratio_based == 0) {
+				OPENTELEMETRY_G(provider)->setSampled(false);
+			} else if (ratio_based == 1) {
+				OPENTELEMETRY_G(provider)->setSampled(true);
+			} else {
+				std::string traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
+				if ((traceparent.empty() && get_unix_nanoseconds() % (OPENTELEMETRY_G(sample_ratio_based) * 1000) == 0) ||
+					(!traceparent.empty() && ratio_based == 1)) {
+					OPENTELEMETRY_G(provider)->setSampled(true);
+				}
+			}
 
-    }
-  }
+		}
+	}
 }
 
 /**
@@ -143,7 +143,7 @@ PHP_FUNCTION (opentelemetry_set_sample_ratio_based) {
  * @param return_value
  */
 PHP_FUNCTION (opentelemetry_get_service_name) {
-  RETURN_STRING(OPENTELEMETRY_G(service_name));
+	RETURN_STRING(OPENTELEMETRY_G(service_name));
 }
 
 /**
@@ -152,7 +152,7 @@ PHP_FUNCTION (opentelemetry_get_service_name) {
  * @param return_value
  */
 PHP_FUNCTION (opentelemetry_get_service_ip) {
-  RETURN_STRING(OPENTELEMETRY_G(ipv4).c_str());
+	RETURN_STRING(OPENTELEMETRY_G(ipv4).c_str());
 }
 
 /**
@@ -161,5 +161,5 @@ PHP_FUNCTION (opentelemetry_get_service_ip) {
  * @param return_value
  */
 PHP_FUNCTION (opentelemetry_get_ppid) {
-  RETURN_LONG(get_current_ppid());
+	RETURN_LONG(get_current_ppid());
 }
