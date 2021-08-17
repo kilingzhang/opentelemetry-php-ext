@@ -156,15 +156,21 @@ void Provider::clean() {
 			request->Clear();
 			delete request;
 			request = nullptr;
+			is_sampled = false;
+			states.clear();
 		}
 	} else {
 		pid_t ppid = get_current_ppid();
 		if (requests.find(ppid) != requests.end()) {
+			sampled_map.erase(ppid);
 			firstSpans.erase(ppid);
 			resourceSpans.erase(ppid);
 			requests[ppid]->Clear();
 			delete requests[ppid];
 			requests.erase(ppid);
+		}
+		if (states_map.find(ppid) != states_map.end()) {
+			states_map[ppid].clear();
 		}
 	}
 }
