@@ -190,6 +190,10 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 
 	}
 
+	if (is_has_provider()) {
+		OPENTELEMETRY_G(provider)->increase();
+	}
+
 	array_init(&OPENTELEMETRY_G(curl_header));
 
 	if (!is_cli_sapi() && is_equal_const(OPENTELEMETRY_G(service_name), PHP_OPENTELEMETRY_SERVICE_NAME)) {

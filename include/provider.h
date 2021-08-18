@@ -51,7 +51,10 @@ class Provider {
   static void okEnd(opentelemetry::proto::trace::v1::Span *span);
   static void errorEnd(opentelemetry::proto::trace::v1::Span *span, const std::string &message);
 
+  void increase();
+  long count() const;
  private:
+  long counter = 0;
   opentelemetry::proto::trace::v1::ResourceSpans *resourceSpan = nullptr;
   opentelemetry::proto::resource::v1::Resource *resource = nullptr;
   tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::ResourceSpans *> resourceSpans;

@@ -127,7 +127,7 @@ PHP_FUNCTION (opentelemetry_set_sample_ratio_based) {
 				OPENTELEMETRY_G(provider)->setSampled(true);
 			} else {
 				std::string traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
-				if ((traceparent.empty() && get_unix_nanoseconds() % (OPENTELEMETRY_G(sample_ratio_based) * 1000) == 0) ||
+				if ((traceparent.empty() && OPENTELEMETRY_G(provider)->count() % OPENTELEMETRY_G(sample_ratio_based) == 0) ||
 					(!traceparent.empty() && ratio_based == 1)) {
 					OPENTELEMETRY_G(provider)->setSampled(true);
 				}

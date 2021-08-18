@@ -135,7 +135,7 @@ bool Provider::isSampled() {
 	}
 
 	unsigned long time_consuming = get_unix_nanoseconds() - OPENTELEMETRY_G(provider)->firstOneSpan()->start_time_unix_nano();
-	time_consuming /= 1000000;
+	time_consuming /= 1e6;
 	return time_consuming >= OPENTELEMETRY_G(max_time_consuming);
 }
 
@@ -224,7 +224,7 @@ void Provider::parseTraceParent(const std::string &traceparent) {
 			setSampled(kv[3] == "01");
 		}
 	} else {
-		if (OPENTELEMETRY_G(sample_ratio_based) == 1 || get_unix_nanoseconds() % (OPENTELEMETRY_G(sample_ratio_based) * 1000) == 0) {
+		if (OPENTELEMETRY_G(sample_ratio_based) == 1 || OPENTELEMETRY_G(provider)->count() % OPENTELEMETRY_G(sample_ratio_based) == 0) {
 			setSampled(true);
 		} else if (OPENTELEMETRY_G(sample_ratio_based) == 0) {
 			setSampled(false);
@@ -269,4 +269,14 @@ void Provider::errorEnd(Span *span, const std::string &message) {
 	OPENTELEMETRY_G(provider)->setSampled(true);
 }
 
+void Provider::increase() {
+	if (counter > 10000000) {
+		counter = 0;
+	}
+	counter++;
+}
+
+long Provider::count() const {
+	return counter;
+}
 
