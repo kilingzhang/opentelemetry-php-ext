@@ -6,6 +6,7 @@
 #include "include/sdk.h"
 #include "include/utils.h"
 #include "include/core.h"
+#include "Zend/zend_hash.h"
 
 #include <random>
 
@@ -162,4 +163,141 @@ PHP_FUNCTION (opentelemetry_get_service_ip) {
  */
 PHP_FUNCTION (opentelemetry_get_ppid) {
 	RETURN_LONG(get_current_ppid());
+}
+
+/**
+ *
+ * @param execute_data
+ * @param return_value
+ */
+PHP_FUNCTION (opentelemetry_get_unix_nano) {
+	RETURN_LONG(get_unix_nanoseconds());
+}
+
+/**
+ *
+ * @param execute_data
+ * @param return_value
+ */
+PHP_FUNCTION (opentelemetry_get_environment) {
+	RETURN_STRING(OPENTELEMETRY_G(environment));
+}
+
+/**
+ *
+ * @param execute_data
+ * @param return_value
+ */
+PHP_FUNCTION (opentelemetry_add_span) {
+
+	if (is_has_provider()) {
+
+		char *name = nullptr;
+		size_t name_len;
+		long kind;
+		long start_time_unix_nano;
+		long status_code;
+		char *status_message = nullptr;
+		size_t status_message_len;
+		zval *attributes;
+
+		//name, kind, start_time_unix_nano, attributes
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slllsa",
+								  &name, &name_len, &kind, &start_time_unix_nano, &status_code, &status_message, &status_message_len, &attributes) == FAILURE) {
+			RETURN_FALSE;
+		}
+
+		std::string parentId = OPENTELEMETRY_G(provider)->firstOneSpan()->span_id();
+		auto span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind(int(kind)));
+		span->set_parent_span_id(parentId);
+		span->set_start_time_unix_nano(start_time_unix_nano);
+
+		zval *attribute;
+		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(attributes), attribute)
+				{
+					zval *key = zend_hash_str_find(Z_ARRVAL_P(attribute), ZEND_STRL("key"));
+					zval *value = zend_hash_str_find(Z_ARRVAL_P(attribute), ZEND_STRL("value"));
+					if (Z_TYPE_P(value) == IS_ARRAY) {
+						set_string_attribute(span->add_attributes(), Z_STRVAL_P(key), opentelemetry_json_encode(value));
+					} else if (Z_TYPE_P(value) == IS_STRING) {
+						set_string_attribute(span->add_attributes(), Z_STRVAL_P(key), Z_STRVAL_P(value));
+					} else {
+						zval str_p;
+						ZVAL_COPY(&str_p, value);
+						convert_to_string(&str_p);
+						set_string_attribute(span->add_attributes(), Z_STRVAL_P(key), Z_STRVAL_P(&str_p));
+						zval_dtor(&str_p);
+					}
+				}
+		ZEND_HASH_FOREACH_END();
+
+		if (Status_StatusCode(int(status_code)) == Status_StatusCode_STATUS_CODE_ERROR) {
+			Provider::errorEnd(span, status_message);
+		} else {
+			Provider::okEnd(span);
+		}
+
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_FUNCTION (opentelemetry_add_resource_attribute) {
+	if (is_has_provider()) {
+
+		char *key = nullptr;
+		size_t key_len;
+		char *value = nullptr;
+		size_t value_len;
+
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss",
+								  &key, &key_len, &value, &value_len) == FAILURE) {
+			RETURN_FALSE;
+		}
+
+		set_string_attribute(OPENTELEMETRY_G(provider)->getResource()->add_attributes(), key, value);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_FUNCTION (opentelemetry_add_event) {
+
+	if (is_has_provider()) {
+
+		char *name = nullptr;
+		size_t name_len;
+		zval *attributes;
+
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa",
+								  &name, &name_len, &attributes) == FAILURE) {
+			RETURN_FALSE;
+		}
+
+		auto event = OPENTELEMETRY_G(provider)->firstOneSpan()->add_events();
+		event->set_name(name);
+		event->set_time_unix_nano(get_unix_nanoseconds());
+
+		zend_string *key;
+		zval *entry_value;
+		ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(attributes), key, entry_value)
+				{
+					if (key) { /* HASH_KEY_IS_STRING */
+						if (Z_TYPE_P(entry_value) == IS_ARRAY) {
+							set_string_attribute(event->add_attributes(), key->val, opentelemetry_json_encode(entry_value));
+						} else if (Z_TYPE_P(entry_value) == IS_STRING) {
+							set_string_attribute(event->add_attributes(), key->val, Z_STRVAL_P(entry_value));
+						} else {
+							zval str_p;
+							ZVAL_COPY(&str_p, entry_value);
+							convert_to_string(&str_p);
+							set_string_attribute(event->add_attributes(), key->val, Z_STRVAL_P(&str_p));
+							zval_dtor(&str_p);
+						}
+					}
+				}ZEND_HASH_FOREACH_END();
+
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
 }

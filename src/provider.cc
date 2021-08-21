@@ -104,6 +104,7 @@ Span *Provider::createSpan(const std::string &name, Span_SpanKind kind) {
 	span->set_span_id(generate_span_id().data, 8);
 	span->set_start_time_unix_nano(get_unix_nanoseconds());
 	span->set_dropped_attributes_count(0);
+	span->set_dropped_events_count(0);
 	return span;
 }
 
