@@ -191,6 +191,7 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 	}
 
 	if (is_has_provider()) {
+		OPENTELEMETRY_G(provider)->clean();
 		OPENTELEMETRY_G(provider)->increase();
 	}
 
