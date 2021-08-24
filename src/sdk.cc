@@ -261,6 +261,25 @@ PHP_FUNCTION (opentelemetry_add_resource_attribute) {
 	RETURN_FALSE;
 }
 
+PHP_FUNCTION (opentelemetry_add_attribute) {
+	if (is_has_provider()) {
+
+		char *key = nullptr;
+		size_t key_len;
+		char *value = nullptr;
+		size_t value_len;
+
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss",
+								  &key, &key_len, &value, &value_len) == FAILURE) {
+			RETURN_FALSE;
+		}
+
+		set_string_attribute(OPENTELEMETRY_G(provider)->firstOneSpan()->add_attributes(), key, value);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
 PHP_FUNCTION (opentelemetry_add_event) {
 
 	if (is_has_provider()) {

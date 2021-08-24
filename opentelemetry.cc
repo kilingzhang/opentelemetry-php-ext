@@ -100,6 +100,7 @@ const zend_function_entry opentelemetry_functions[] = {
 	PHP_FE(opentelemetry_get_environment, NULL)
 	PHP_FE(opentelemetry_add_span, NULL)
 	PHP_FE(opentelemetry_add_resource_attribute, NULL)
+	PHP_FE(opentelemetry_add_attribute, NULL)
 	PHP_FE(opentelemetry_add_event, NULL)
 	PHP_FE_END    /* Must be the last line in opentelemetry_functions[] */
 };

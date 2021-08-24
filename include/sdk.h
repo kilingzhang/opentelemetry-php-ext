@@ -33,6 +33,8 @@ PHP_FUNCTION (opentelemetry_add_span);
 
 PHP_FUNCTION (opentelemetry_add_resource_attribute);
 
+PHP_FUNCTION (opentelemetry_add_attribute);
+
 PHP_FUNCTION (opentelemetry_add_event);
 
 #endif //OPENTELEMETRY_SDK_H
