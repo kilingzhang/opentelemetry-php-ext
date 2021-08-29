@@ -48,6 +48,7 @@ ResourceSpans *Provider::getTracer() {
 			resourceSpan = request->add_resource_spans();
 			resource = resourceSpan->resource().New();
 			resource->set_dropped_attributes_count(0);
+			set_string_attribute(resource->add_attributes(), "deployment.tenant_id", OPENTELEMETRY_G(tenant_id));
 			set_string_attribute(resource->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
 			set_string_attribute(resource->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
 			set_string_attribute(resource->add_attributes(), "net.host.name", OPENTELEMETRY_G(hostname));
@@ -67,6 +68,7 @@ ResourceSpans *Provider::getTracer() {
 			resourceSpans[ppid] = requests[ppid]->add_resource_spans();
 			resources[ppid] = resourceSpans[ppid]->resource().New();
 			resources[ppid]->set_dropped_attributes_count(0);
+			set_string_attribute(resource->add_attributes(), "deployment.tenant_id", OPENTELEMETRY_G(tenant_id));
 			set_string_attribute(resources[ppid]->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
 			set_string_attribute(resources[ppid]->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
 			set_string_attribute(resources[ppid]->add_attributes(), "net.host.name", OPENTELEMETRY_G(hostname));
