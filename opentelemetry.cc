@@ -23,7 +23,6 @@ extern "C" { void *__dso_handle = 0; }
 
 ZEND_DECLARE_MODULE_GLOBALS(opentelemetry)
 PHP_INI_BEGIN()
-		STD_PHP_INI_ENTRY("opentelemetry.tenant_id", PHP_OPENTELEMETRY_TENANT_ID, PHP_INI_ALL, OnUpdateString, tenant_id, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.service_name", PHP_OPENTELEMETRY_SERVICE_NAME, PHP_INI_ALL, OnUpdateString, service_name, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.service_name_key", PHP_OPENTELEMETRY_SERVICE_NAME_KEY, PHP_INI_ALL, OnUpdateString, service_name_key, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.enable", "1", PHP_INI_PERDIR, OnUpdateBool, enable, zend_opentelemetry_globals, opentelemetry_globals)

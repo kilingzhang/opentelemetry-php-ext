@@ -79,9 +79,8 @@ OPENTELEMETRY_BEGIN_EXTERN_C()
 extern zend_module_entry opentelemetry_module_entry;
 #define phpext_opentelemetry_ptr &opentelemetry_module_entry
 
-#define PHP_OPENTELEMETRY_VERSION "0.0.1" /* Replace with version number for your extension */
+#define PHP_OPENTELEMETRY_VERSION "0.1.0" /* Replace with version number for your extension */
 #define DEFAULT_ETH_INF "eth0"
-#define PHP_OPENTELEMETRY_TENANT_ID "vip"
 #define PHP_OPENTELEMETRY_SERVICE_NAME "opentelemetry"
 #define PHP_OPENTELEMETRY_SERVICE_NAME_KEY "SERVICE_NAME"
 #define PHP_OPENTELEMETRY_LOG_PATH "/var/log/opentelemetry"
@@ -171,7 +170,6 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   bool enable_mysql;
   bool enable_yar;
   bool enable_collect;
-  char *tenant_id;
   char *environment;
   char *service_name;
   char *service_name_key;
