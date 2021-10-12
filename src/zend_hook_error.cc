@@ -15,13 +15,13 @@ using namespace opentelemetry::proto::trace::v1;
 #if PHP_VERSION_ID < 80000
 
 extern void (*opentelemetry_original_zend_error_cb)(int type, const char *error_filename, const uint error_lineno,
-													const char *format, va_list args);
+                                                    const char *format, va_list args);
 
 void (*opentelemetry_original_zend_error_cb)(int type, const char *error_filename, const uint error_lineno,
-											 const char *format, va_list args) = nullptr;
+                                             const char *format, va_list args) = nullptr;
 
 void opentelemetry_error_cb(int type, const char *error_filename, const uint error_lineno, const char *format,
-							va_list args) {
+                            va_list args) {
 #else
 
 	extern void (*opentelemetry_original_zend_error_cb)(int type, const char *error_filename, const uint32_t error_lineno,
@@ -78,12 +78,12 @@ void opentelemetry_error_cb(int type, const char *error_filename, const uint err
 		} else {
 			if (caller->func->common.function_name) {
 				function_name = find_trace_add_scope_name(caller->func->common.function_name,
-														  caller->func->common.scope,
-														  caller->func->common.fn_flags);
+				                                          caller->func->common.scope,
+				                                          caller->func->common.fn_flags);
 			} else if (caller->func->internal_function.function_name) {
 				function_name = find_trace_add_scope_name(caller->func->internal_function.function_name,
-														  caller->func->internal_function.scope,
-														  caller->func->internal_function.fn_flags);
+				                                          caller->func->internal_function.scope,
+				                                          caller->func->internal_function.fn_flags);
 			}
 		}
 

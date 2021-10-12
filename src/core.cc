@@ -163,14 +163,14 @@ void opentelemetry_module_shutdown() {
 }
 
 void opentelemetry_request_init() {
-	if (!is_enabled()) {
+	if (!is_enabled() || is_cli_sapi()) {
 		return;
 	}
 	start_tracer("", "", opentelemetry::proto::trace::v1::Span_SpanKind::Span_SpanKind_SPAN_KIND_SERVER);
 }
 
 void opentelemetry_request_shutdown() {
-	if (!is_enabled()) {
+	if (!is_enabled() || is_cli_sapi()) {
 		return;
 	}
 	shutdown_tracer();
@@ -277,6 +277,10 @@ void shutdown_tracer() {
 //      log("exporterOpentelemetry cost : " + std::to_string(double(get_unix_nanoseconds() - s) / 1000000.0) + "ms.");
 		}
 		OPENTELEMETRY_G(provider)->clean();
+		if (is_cli_sapi()) {
+			delete OPENTELEMETRY_G(provider);
+			OPENTELEMETRY_G(provider) = nullptr;
+		}
 	}
 
 	OPENTELEMETRY_G(is_started_cli_tracer) = false;
