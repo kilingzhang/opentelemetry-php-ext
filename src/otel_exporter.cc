@@ -7,6 +7,9 @@
 #include <string>
 
 #include <grpc/support/log.h>
+#include <netdb.h>
+#include <random>
+#include <Timer.h>
 
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
@@ -36,12 +39,68 @@ void OtelExporter::initUDP(const char *ip, int port) {
 	/* 建立udp socket */
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock_fd < 0) {
+		log("sock_fd open error:" + std::string(strerror(errno)));
 		return;
 	}
-	memset(&addr_in, 0, sizeof(addr_in));
-	addr_in.sin_family = AF_INET;
-	addr_in.sin_addr.s_addr = inet_addr(addr_ip);
-	addr_in.sin_port = htons(addr_port);
+	resolveUDPAddr();
+	auto *pTimer = new CTimer("dns_lookup");
+	pTimer->AsyncLoop(OPENTELEMETRY_G(udp_look_up_time) * 1000, [this]() -> void { this->resolveUDPAddr(); });    //异步循环执行，间隔时间10毫秒
+}
+
+void OtelExporter::resolveUDPAddr() {
+	struct addrinfo *aip;
+	struct addrinfo hint{};
+	char buf[INET_ADDRSTRLEN];
+	const char *addr;
+	int ilRc;
+	hint.ai_family = AF_UNSPEC; /* hint 的限定设置 */
+	hint.ai_socktype = SOCK_DGRAM; /* 这里可是设置 socket type . 比如 SOCK——DGRAM */
+	hint.ai_flags = AI_PASSIVE; /* flags 的标志很多 。常用的有AI_CANONNAME; */
+	hint.ai_protocol = 0; /* 设置协议 一般为0，默认 */
+	hint.ai_addrlen = 0; /* 下面不可以设置，为0，或者为NULL */
+	hint.ai_canonname = nullptr;
+	hint.ai_addr = nullptr;
+	hint.ai_next = nullptr;
+	ilRc = getaddrinfo(addr_ip, std::to_string(addr_port).c_str(), &hint, &addr_info);
+	if (ilRc < 0) {
+		log("get_addr_info error:" + std::string(gai_strerror(errno)));
+		memset(addr_in, 0, sizeof(*addr_in));
+		addr_in->sin_family = AF_INET;
+		addr_in->sin_addr.s_addr = inet_addr(addr_ip);
+		addr_in->sin_port = htons(addr_port);
+	} else {
+		/* 显示获取的信息 */
+		int i, n = 0;
+		for (aip = addr_info; aip != nullptr; aip = aip->ai_next, n++) {
+		}
+		if (n == 1) {
+			addr_in = (struct sockaddr_in *) addr_info->ai_addr;
+		} else {
+			std::random_device rd;
+			std::mt19937 mt(rd());
+			std::uniform_int_distribution<int> dist(0, n - 1);
+			n = dist(mt);
+			for (aip = addr_info; aip != nullptr; aip = aip->ai_next, i++) {
+				if (i != n) {
+					continue;
+				}
+				addr_in = (struct sockaddr_in *) aip->ai_addr;
+				break;
+			}
+		}
+	}
+	addr = inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN);
+	log("resolveUDPAddr ip : " + std::string(addr));
+}
+
+void OtelExporter::sendTracerByUDP(const std::string &data) const {
+	if (sock_fd > 0 && addr_in != nullptr) {
+		ssize_t nums = sendto(sock_fd, data.c_str(), data.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
+		if (nums <= 0) {
+			char buf[INET_ADDRSTRLEN];
+			log("resolveUDPAddr ip : " + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + " data : " + data);
+		}
+	}
 }
 
 bool OtelExporter::isReceiverUDP() {

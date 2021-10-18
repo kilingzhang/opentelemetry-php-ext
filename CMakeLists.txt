@@ -104,7 +104,7 @@ set(ext_src_list
     include/otel_exporter.h
     src/hex.cc
     include/hex.h
-    )
+    include/Timer.h src/Timer.cc)
 add_library(ext-opentelemetry SHARED ${ext_src_list})
 set_target_properties(ext-opentelemetry PROPERTIES PREFIX "")
 set_target_properties(ext-opentelemetry PROPERTIES OUTPUT_NAME "opentelemetry")

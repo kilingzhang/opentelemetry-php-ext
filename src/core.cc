@@ -75,8 +75,8 @@ void exporterOpentelemetry() {
 					delete request;
 				}
 
-				if (exporter->isReceiverUDP() && exporter->sock_fd > 0) {
-					sendto(exporter->sock_fd, data.c_str(), data.size(), 0, (struct sockaddr *) &exporter->addr_in, sizeof(exporter->addr_in));
+				if (exporter->isReceiverUDP()) {
+					exporter->sendTracerByUDP(data);
 				}
 			}
 			data.shrink_to_fit();

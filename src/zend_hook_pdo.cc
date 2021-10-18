@@ -31,7 +31,7 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		function_name = std::string(ZSTR_VAL(zf->internal_function.function_name));
 	}
 	name = find_trace_add_scope_name(zf->internal_function.function_name, zf->internal_function.scope,
-									 zf->internal_function.fn_flags);
+	                                 zf->internal_function.fn_flags);
 
 	std::string cmd = function_name;
 	std::transform(function_name.begin(), function_name.end(), cmd.begin(), ::tolower);
@@ -85,11 +85,11 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				std::regex ws_re(";");
 				std::regex kv_re("=");
 				std::vector<std::string> items(std::sregex_token_iterator(source.begin(), source.end(), ws_re, -1),
-											   std::sregex_token_iterator());
+				                               std::sregex_token_iterator());
 
 				for (auto item:items) {
 					std::vector<std::string> kv(std::sregex_token_iterator(item.begin(), item.end(), kv_re, -1),
-												std::sregex_token_iterator());
+					                            std::sregex_token_iterator());
 					if (kv.size() >= 2) {
 
 						if (kv[0] == "host") {

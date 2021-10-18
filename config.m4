@@ -98,6 +98,7 @@ if test "$PHP_OPENTELEMETRY" != "no"; then
         src/otel_exporter.cc
         src/core.cc
         src/sdk.cc
+        src/Timer.cc
         src/zend_hook.cc
         src/zend_hook_error.cc
         src/zend_hook_exception.cc

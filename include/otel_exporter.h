@@ -40,10 +40,10 @@ class OtelExporter {
   };
  public:
   int sock_fd = -1;
-  struct sockaddr_in addr_in{};
-  const char *addr_ip;
-  int addr_port;
-
+  struct sockaddr_in *addr_in{};
+  const char *addr_ip{};
+  int addr_port{};
+  struct addrinfo *addr_info{};
   explicit OtelExporter(const char *type);
   ~OtelExporter();
 
@@ -62,6 +62,8 @@ class OtelExporter {
   // Loop while listening for completed responses.
   // Prints out the response from the server.
   void AsyncCompleteRpc();
+  void resolveUDPAddr();
+  void sendTracerByUDP(const std::string &data) const;
 };
 
 #endif //OPENTELEMETRY_SRC_OTEL_EXPORTER_H_

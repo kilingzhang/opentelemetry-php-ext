@@ -89,6 +89,7 @@ extern zend_module_entry opentelemetry_module_entry;
 #define PHP_OPENTELEMETRY_RECEIVER_TYPE "grpc"
 #define PHP_OPENTELEMETRY_UDP_IP "127.0.0.1"
 #define PHP_OPENTELEMETRY_UDP_PORT "5337"
+#define PHP_OPENTELEMETRY_UDP_LOOK_UP_TIME "600"
 #define PHP_OPENTELEMETRY_ENVIRONMENT "staging"
 #define PHP_OPENTELEMETRY_ERROR_LEVEL "E_ERROR"
 #define PHP_OPENTELEMETRY_MAX_TIME_CONSUMING "1000"
@@ -184,6 +185,7 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   char *grpc_endpoint;
   char *udp_ip;
   int udp_port;
+  int udp_look_up_time;
   char *message_queue_name;
   int max_message_size;
   int max_queue_length;
