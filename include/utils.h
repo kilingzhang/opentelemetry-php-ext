@@ -28,6 +28,10 @@ using namespace opentelemetry::proto::common::v1;
  */
 void log(const std::string &message);
 
+bool is_receiver_udp();
+
+bool is_receiver_grpc();
+
 /**
  *
  * @return

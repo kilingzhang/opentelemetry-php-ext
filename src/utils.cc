@@ -40,6 +40,14 @@ void log(const std::string &message) {
 	file.shrink_to_fit();
 }
 
+bool is_receiver_udp() {
+	return is_equal_const("udp", OPENTELEMETRY_G(receiver_type));
+}
+
+bool is_receiver_grpc() {
+	return is_equal_const("grpc", OPENTELEMETRY_G(receiver_type));
+}
+
 bool is_has_provider() {
 	return OPENTELEMETRY_G(provider) != nullptr;
 }

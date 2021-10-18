@@ -8,11 +8,15 @@
 #include <string>
 #include <grpc/support/log.h>
 #include <grpc/grpc.h>
+#include <netinet/in.h>
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
 class OtelExporter {
  private:
+
+  std::string receiver_type;
+
   // Out of the passed in Channel comes the stub, stored here, our view of the
   // server's exposed services.
   std::unique_ptr<opentelemetry::proto::collector::trace::v1::TraceService::Stub> stub_;
@@ -35,8 +39,21 @@ class OtelExporter {
 	std::unique_ptr<grpc::ClientAsyncResponseReader<opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse>> response_reader;
   };
  public:
-  explicit OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channel);
+  int sock_fd = -1;
+  struct sockaddr_in addr_in{};
+  const char *addr_ip;
+  int addr_port;
+
+  explicit OtelExporter(const char *type);
   ~OtelExporter();
+
+  void initGRPC(const std::shared_ptr<grpc::ChannelInterface> &channel);
+
+  void initUDP(const char *ip, int port);
+
+  bool isReceiverUDP();
+
+  bool isReceiverGRPC();
 
   void sendAsyncTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request, long long int milliseconds);
 
@@ -45,8 +62,6 @@ class OtelExporter {
   // Loop while listening for completed responses.
   // Prints out the response from the server.
   void AsyncCompleteRpc();
-
-  void close();
 };
 
 #endif //OPENTELEMETRY_SRC_OTEL_EXPORTER_H_

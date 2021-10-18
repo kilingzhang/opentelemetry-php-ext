@@ -40,10 +40,13 @@ PHP_INI_BEGIN()
 		STD_PHP_INI_ENTRY("opentelemetry.max_time_consuming", PHP_OPENTELEMETRY_MAX_TIME_CONSUMING, PHP_INI_PERDIR, OnUpdateLong, max_time_consuming, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.error_level", PHP_OPENTELEMETRY_ERROR_LEVEL, PHP_INI_PERDIR, OnUpdateString, error_level, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.log_path", PHP_OPENTELEMETRY_LOG_PATH, PHP_INI_PERDIR, OnUpdateString, log_path, zend_opentelemetry_globals, opentelemetry_globals)
+		STD_PHP_INI_ENTRY("opentelemetry.receiver_type", PHP_OPENTELEMETRY_RECEIVER_TYPE, PHP_INI_PERDIR, OnUpdateString, receiver_type, zend_opentelemetry_globals, opentelemetry_globals)
+		STD_PHP_INI_ENTRY("opentelemetry.udp_ip", PHP_OPENTELEMETRY_UDP_IP, PHP_INI_PERDIR, OnUpdateString, udp_ip, zend_opentelemetry_globals, opentelemetry_globals)
+		STD_PHP_INI_ENTRY("opentelemetry.udp_port", PHP_OPENTELEMETRY_UDP_PORT, PHP_INI_PERDIR, OnUpdateLong, udp_port, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.grpc_endpoint", PHP_OPENTELEMETRY_GRPC_ENDPOINT, PHP_INI_PERDIR, OnUpdateString, grpc_endpoint, zend_opentelemetry_globals, opentelemetry_globals)
-		STD_PHP_INI_ENTRY("opentelemetry.grpc_max_message_size", "102400", PHP_INI_PERDIR, OnUpdateLong, grpc_max_message_size, zend_opentelemetry_globals, opentelemetry_globals)
-		STD_PHP_INI_ENTRY("opentelemetry.grpc_max_queue_length", "1024", PHP_INI_PERDIR, OnUpdateLong, grpc_max_queue_length, zend_opentelemetry_globals, opentelemetry_globals)
-		STD_PHP_INI_ENTRY("opentelemetry.grpc_consumer", "1", PHP_INI_PERDIR, OnUpdateLong, grpc_consumer, zend_opentelemetry_globals, opentelemetry_globals)
+		STD_PHP_INI_ENTRY("opentelemetry.max_message_size", "102400", PHP_INI_PERDIR, OnUpdateLong, max_message_size, zend_opentelemetry_globals, opentelemetry_globals)
+		STD_PHP_INI_ENTRY("opentelemetry.max_queue_length", "1024", PHP_INI_PERDIR, OnUpdateLong, max_queue_length, zend_opentelemetry_globals, opentelemetry_globals)
+		STD_PHP_INI_ENTRY("opentelemetry.consumer_nums", "1", PHP_INI_PERDIR, OnUpdateLong, consumer_nums, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.grpc_timeout_milliseconds", "100", PHP_INI_PERDIR, OnUpdateLong, grpc_timeout_milliseconds, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.environment", PHP_OPENTELEMETRY_ENVIRONMENT, PHP_INI_PERDIR, OnUpdateString, environment, zend_opentelemetry_globals, opentelemetry_globals)
 PHP_INI_END()
@@ -51,7 +54,7 @@ PHP_INI_END()
 
 //static void php_opentelemetry_init_globals(zend_opentelemetry_globals *opentelemetry_globals) {
 //  opentelemetry_globals->grpc_timeout_milliseconds = 100;
-//  opentelemetry_globals->grpc_max_message_size = 102400;
+//  opentelemetry_globals->max_message_size = 102400;
 //}
 
 PHP_MINIT_FUNCTION (opentelemetry) {

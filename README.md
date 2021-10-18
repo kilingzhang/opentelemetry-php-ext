@@ -99,12 +99,12 @@ opentelemetry.grpc_endpoint = "127.0.0.1:4317"
 ; grpc 超时时间
 opentelemetry.grpc_timeout_milliseconds = 100
 ; 限制grpc上报
-; grpc_max_message_size*grpc_max_queue_length*grpc_consumer 根据机器配置实际情况设置
-opentelemetry.grpc_max_message_size = 256000
+; max_message_size*max_queue_length*consumer_nums 根据机器配置实际情况设置
+opentelemetry.max_message_size = 256000
 ; 上报堆积队列长度
-opentelemetry.grpc_max_queue_length = 1024
+opentelemetry.max_queue_length = 1024
 ; 队列消费者线程数 默认 1
-opentelemetry.grpc_consumer = 10
+opentelemetry.consumer_nums = 10
 ;  环境 staging production 默认 staging
 opentelemetry.environment = "staging"
 ```
@@ -124,6 +124,8 @@ opentelemetry.environment = "staging"
 
 up -> 10%-15%
 ```
+
+## [otlp udp receiver](https://github.com/kilingzhang/otlpudpreceiver)
 
 ## 感谢
 

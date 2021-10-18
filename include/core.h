@@ -14,11 +14,11 @@
  */
 void exporterOpentelemetry();
 
-void init_grpc_consumers();
+void init_consumers();
 
-void clean_grpc_consumers();
+void clean_consumers();
 
-[[noreturn]] void consumer(int i, const std::string &name, OtelExporter *otelExporter);
+[[noreturn]] void consumer(int i, const std::string &name, OtelExporter *exporter);
 
 /**
  *

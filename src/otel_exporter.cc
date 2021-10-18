@@ -13,12 +13,44 @@
 
 using namespace opentelemetry::proto::collector::trace::v1;
 
-OtelExporter::OtelExporter(const std::shared_ptr<grpc::ChannelInterface> &channel)
-	: stub_(TraceService::NewStub(channel)) {}
+OtelExporter::OtelExporter(const char *type) {
+	receiver_type = type;
+}
 
 OtelExporter::~OtelExporter() {
-	close();
+	if (isReceiverGRPC()) {
+		cq_.Shutdown();
+	}
+	if (isReceiverUDP()) {
+		close(sock_fd);
+	}
 };
+
+void OtelExporter::initGRPC(const std::shared_ptr<grpc::ChannelInterface> &channel) {
+	stub_ = TraceService::NewStub(channel);
+}
+
+void OtelExporter::initUDP(const char *ip, int port) {
+	addr_ip = ip;
+	addr_port = port;
+	/* 建立udp socket */
+	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock_fd < 0) {
+		return;
+	}
+	memset(&addr_in, 0, sizeof(addr_in));
+	addr_in.sin_family = AF_INET;
+	addr_in.sin_addr.s_addr = inet_addr(addr_ip);
+	addr_in.sin_port = htons(addr_port);
+}
+
+bool OtelExporter::isReceiverUDP() {
+	return is_equal(receiver_type, "udp");
+}
+
+bool OtelExporter::isReceiverGRPC() {
+	return is_equal(receiver_type, "grpc");
+}
 
 void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int milliseconds) {
 
@@ -85,8 +117,4 @@ void OtelExporter::AsyncCompleteRpc() {
 		delete call;
 
 	}
-};
-
-void OtelExporter::close() {
-	cq_.Shutdown();
 };

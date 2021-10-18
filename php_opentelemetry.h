@@ -86,6 +86,9 @@ extern zend_module_entry opentelemetry_module_entry;
 #define PHP_OPENTELEMETRY_LOG_PATH "/var/log/opentelemetry"
 #define PHP_OPENTELEMETRY_UNIX_SOCKET "/var/run/opentelemetry-agent.sock"
 #define PHP_OPENTELEMETRY_GRPC_ENDPOINT "127.0.0.1:4317"
+#define PHP_OPENTELEMETRY_RECEIVER_TYPE "grpc"
+#define PHP_OPENTELEMETRY_UDP_IP "127.0.0.1"
+#define PHP_OPENTELEMETRY_UDP_PORT "5337"
 #define PHP_OPENTELEMETRY_ENVIRONMENT "staging"
 #define PHP_OPENTELEMETRY_ERROR_LEVEL "E_ERROR"
 #define PHP_OPENTELEMETRY_MAX_TIME_CONSUMING "1000"
@@ -177,11 +180,14 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   int sample_ratio_based;
   int max_time_consuming;
   char *log_path;
+  char *receiver_type;
   char *grpc_endpoint;
+  char *udp_ip;
+  int udp_port;
   char *message_queue_name;
-  int grpc_max_message_size;
-  int grpc_max_queue_length;
-  int grpc_consumer;
+  int max_message_size;
+  int max_queue_length;
+  int consumer_nums;
   int grpc_timeout_milliseconds;
   Provider *provider;
   std::string ipv4;
