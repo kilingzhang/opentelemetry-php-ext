@@ -37,3 +37,5 @@ cmake-build-debug
 opentelemetry
 .gdbinit
 vendor
+composer.json
+composer.lock

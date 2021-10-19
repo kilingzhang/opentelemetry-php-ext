@@ -93,7 +93,6 @@ void CTimer::DeleteThread() {
 	}
 }
 
-#pragma mark -
 
 uint64_t CTimer::Timestamp() {
 

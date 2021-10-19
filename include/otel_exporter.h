@@ -44,6 +44,7 @@ class OtelExporter {
   const char *addr_ip{};
   int addr_port{};
   struct addrinfo *addr_info{};
+  struct addrinfo *current_addr_info{};
   explicit OtelExporter(const char *type);
   ~OtelExporter();
 
@@ -63,7 +64,7 @@ class OtelExporter {
   // Prints out the response from the server.
   void AsyncCompleteRpc();
   void resolveUDPAddr();
-  void sendTracerByUDP(const std::string &data) const;
+  void sendTracerByUDP(const std::string &data);
 };
 
 #endif //OPENTELEMETRY_SRC_OTEL_EXPORTER_H_

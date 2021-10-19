@@ -23,24 +23,14 @@ void exporterOpentelemetry() {
 
 	auto request = OPENTELEMETRY_G(provider)->getRequest();
 	std::string msg = request->SerializePartialAsString();
-
 	try {
 		message_queue mq(
 			open_only,
 			OPENTELEMETRY_G(message_queue_name)
 		);
-
-		int msg_length = static_cast<int>(msg.size());
-		int max_length = OPENTELEMETRY_G(max_message_size);
-		if (msg_length > max_length) {
-			log("[opentelemetry] " + OPENTELEMETRY_G(provider)->firstOneSpan()->name() + " message is too big: " + std::to_string(msg_length) + ", mq_max_message_length=" + std::to_string(max_length));
-			return;
-		}
-
 		if (!mq.try_send(msg.data(), msg.size(), 0)) {
 			log("[opentelemetry] send message_queue failed");
 		}
-
 		msg.shrink_to_fit();
 	} catch (interprocess_exception &ex) {
 		log("[opentelemetry] send flush message_queue failed : " + std::string(ex.what()));
@@ -74,7 +64,6 @@ void exporterOpentelemetry() {
 					request->Clear();
 					delete request;
 				}
-
 				if (exporter->isReceiverUDP()) {
 					exporter->sendTracerByUDP(data);
 				}
@@ -102,7 +91,7 @@ void init_consumers() {
 			permissions(0777)
 		);
 
-		log("open " + std::string(OPENTELEMETRY_G(message_queue_name)) + " message queue success .");
+		log("[opentelemetry] open " + std::string(OPENTELEMETRY_G(message_queue_name)) + " message queue success .");
 
 		for (int i = 0; i < OPENTELEMETRY_G(consumer_nums); i++) {
 
@@ -130,7 +119,7 @@ void init_consumers() {
 
 		}
 	} catch (interprocess_exception &ex) {
-		log("open flush message_queue ex : " + std::string(ex.what()));
+		log("[opentelemetry] open flush message_queue ex : " + std::string(ex.what()));
 	}
 
 }
@@ -138,9 +127,9 @@ void init_consumers() {
 void clean_consumers() {
 	try {
 		message_queue::remove(OPENTELEMETRY_G(message_queue_name));
-		log("remove " + std::string(OPENTELEMETRY_G(message_queue_name)) + " message queue success .");
+		log("[opentelemetry] remove " + std::string(OPENTELEMETRY_G(message_queue_name)) + " message queue success .");
 	} catch (interprocess_exception &ex) {
-		log("remove flush message_queue ex : " + std::string(ex.what()));
+		log("[opentelemetry] remove flush message_queue ex : " + std::string(ex.what()));
 	}
 }
 
@@ -288,7 +277,7 @@ void shutdown_tracer() {
 		if (OPENTELEMETRY_G(enable_collect) && OPENTELEMETRY_G(provider)->isSampled()) {
 //      unsigned long s = get_unix_nanoseconds();
 			exporterOpentelemetry();
-//      log("exporterOpentelemetry cost : " + std::to_string(double(get_unix_nanoseconds() - s) / 1000000.0) + "ms.");
+			//log("[opentelemetry] exporterOpentelemetry cost : " + std::to_string(double(get_unix_nanoseconds() - s) / 1000000.0) + "ms.");
 		}
 		OPENTELEMETRY_G(provider)->clean();
 		if (is_cli_sapi()) {

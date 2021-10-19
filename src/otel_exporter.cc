@@ -3,13 +3,13 @@
 //
 #include "include/otel_exporter.h"
 #include "include/utils.h"
+#include "include/Timer.h"
+#include "include/hex.h"
 
 #include <string>
 
 #include <grpc/support/log.h>
 #include <netdb.h>
-#include <random>
-#include <Timer.h>
 
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
@@ -39,7 +39,7 @@ void OtelExporter::initUDP(const char *ip, int port) {
 	/* 建立udp socket */
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock_fd < 0) {
-		log("sock_fd open error:" + std::string(strerror(errno)));
+		log("[opentelemetry] sock_fd open error:" + std::string(strerror(errno)));
 		return;
 	}
 	resolveUDPAddr();
@@ -63,42 +63,55 @@ void OtelExporter::resolveUDPAddr() {
 	hint.ai_next = nullptr;
 	ilRc = getaddrinfo(addr_ip, std::to_string(addr_port).c_str(), &hint, &addr_info);
 	if (ilRc < 0) {
-		log("get_addr_info error:" + std::string(gai_strerror(errno)));
+		log("[opentelemetry] get_addr_info error:" + std::string(gai_strerror(errno)));
 		memset(addr_in, 0, sizeof(*addr_in));
 		addr_in->sin_family = AF_INET;
 		addr_in->sin_addr.s_addr = inet_addr(addr_ip);
 		addr_in->sin_port = htons(addr_port);
 	} else {
-		/* 显示获取的信息 */
-		int i, n = 0;
-		for (aip = addr_info; aip != nullptr; aip = aip->ai_next, n++) {
-		}
-		if (n == 1) {
-			addr_in = (struct sockaddr_in *) addr_info->ai_addr;
-		} else {
-			std::random_device rd;
-			std::mt19937 mt(rd());
-			std::uniform_int_distribution<int> dist(0, n - 1);
-			n = dist(mt);
-			for (aip = addr_info; aip != nullptr; aip = aip->ai_next, i++) {
-				if (i != n) {
-					continue;
-				}
-				addr_in = (struct sockaddr_in *) aip->ai_addr;
-				break;
-			}
-		}
+		current_addr_info = addr_info;
+		addr_in = (struct sockaddr_in *) current_addr_info->ai_addr;
 	}
-	addr = inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN);
-	log("resolveUDPAddr ip : " + std::string(addr));
+	log("[opentelemetry] resolveUDPAddr ip : " + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)));
 }
 
-void OtelExporter::sendTracerByUDP(const std::string &data) const {
-	if (sock_fd > 0 && addr_in != nullptr) {
-		ssize_t nums = sendto(sock_fd, data.c_str(), data.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
-		if (nums <= 0) {
-			char buf[INET_ADDRSTRLEN];
-			log("resolveUDPAddr ip : " + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + " data : " + data);
+void OtelExporter::sendTracerByUDP(const std::string &data) {
+	if (sock_fd > 0 && addr_in != nullptr && !data.empty()) {
+
+		int dataSize = static_cast<int>(data.size());
+		//udp 最大报文消息
+		int maxUdpSize = 60000;
+
+		if (dataSize <= maxUdpSize) {
+			ssize_t nums = sendto(sock_fd, data.c_str(), data.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
+			if (nums < 0) {
+				char buf[INET_ADDRSTRLEN];
+				log("[opentelemetry] sendto message failed, ip:" + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()) + ", error:" + strerror(errno));
+			}
+		} else {
+			//超过udp最大发包大小 分包发送
+			int shards = ceil((float) dataSize / (float) maxUdpSize);
+			std::string id = Hex::encode(reinterpret_cast<const uint8_t *>(generate_trace_id().data), 16);
+			for (int i = 0; i < shards; i++) {
+				//协议 md5:9,0:end:数据
+				auto warp = id + ":" + std::to_string(shards) + "," + std::to_string(i) + ":end:" + data.substr(i * maxUdpSize, maxUdpSize);
+				//防止丢包 多发一次
+				sendto(sock_fd, warp.c_str(), warp.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
+				ssize_t nums = sendto(sock_fd, warp.c_str(), warp.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
+				if (nums < 0) {
+					char buf[INET_ADDRSTRLEN];
+					log("[opentelemetry] sendto warp " + std::to_string(i) + " message failed, ip:" + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()) + ", error:" + strerror(errno));
+				}
+			}
+		}
+
+		if (current_addr_info != nullptr) {
+			if (current_addr_info->ai_next != nullptr) {
+				current_addr_info = current_addr_info->ai_next;
+			} else {
+				current_addr_info = addr_info;
+			}
+			addr_in = (struct sockaddr_in *) current_addr_info->ai_addr;
 		}
 	}
 }
