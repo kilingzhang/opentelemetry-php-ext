@@ -28,7 +28,7 @@ find src -name ".libs" | while read id; do rm -rf $id; done
 if [ -d $PHP_INI_DIR"/php.d/" ]; then
   cp opentelemetry.ini $PHP_INI_DIR"/php.d/docker-php-ext-opentelemetry.ini"
 fi
-if [ -d $PHP_INI_DIR"/php.d/" ]; then
+if [ -d $PHP_INI_DIR"/conf.d/" ]; then
   cp opentelemetry.ini $PHP_INI_DIR"/conf.d/docker-php-ext-opentelemetry.ini"
 fi
 php -m | grep opentelemetry
