@@ -41,7 +41,7 @@ class OtelExporter {
  public:
   int sock_fd = -1;
   struct sockaddr_in *addr_in{};
-  const char *addr_ip{};
+  const char *addr_ip = nullptr;
   int addr_port = 0;
   struct addrinfo *addr_info{};
   struct addrinfo *current_addr_info{};

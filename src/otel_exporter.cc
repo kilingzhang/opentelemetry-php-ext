@@ -17,6 +17,9 @@
 using namespace opentelemetry::proto::collector::trace::v1;
 
 OtelExporter::OtelExporter(const char *type) {
+	struct sockaddr_in addr{};
+	bzero(&addr, sizeof(addr));  //初始化结构体
+	this->addr_in = &addr;
 	this->receiver_type = type;
 }
 
@@ -65,8 +68,8 @@ void OtelExporter::resolveUDPAddr(int reTry) {
 	hint.ai_addr = nullptr;
 	hint.ai_next = nullptr;
 
+	log("look up dns :" + std::string(this->addr_ip));
 	if (inet_addr(this->addr_ip) != INADDR_NONE) {
-		memset(this->addr_in, 0, sizeof(*this->addr_in));
 		this->addr_in->sin_family = AF_INET;
 		this->addr_in->sin_addr.s_addr = inet_addr(this->addr_ip);
 		this->addr_in->sin_port = htons(this->addr_port);
