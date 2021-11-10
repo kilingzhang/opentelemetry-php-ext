@@ -91,11 +91,6 @@ void OtelExporter::resolveUDPAddr(int reTry) {
 void OtelExporter::sendTracerByUDP(const std::string &data) {
 	if (this->sock_fd > 0 && this->addr_in != nullptr && !data.empty()) {
 
-		if (this->current_addr_info == nullptr || this->addr_in == nullptr) {
-			log("[opentelemetry] resolveUDPAddr current_addr_info is nil ");
-			return;
-		}
-
 		int dataSize = static_cast<int>(data.size());
 		//udp 最大报文消息
 		int maxUdpSize = 60000;
