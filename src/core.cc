@@ -79,6 +79,10 @@ void exporterOpentelemetry() {
 
 void init_consumers() {
 
+	if (OPENTELEMETRY_G(message_queue_name) == nullptr || is_equal_const(OPENTELEMETRY_G(message_queue_name), "")) {
+		OPENTELEMETRY_G(message_queue_name) = string2char("opentelemetry_" + std::to_string(getpid()));
+	}
+
 	clean_consumers();
 
 	if (is_cli_sapi()) {
