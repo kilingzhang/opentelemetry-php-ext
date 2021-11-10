@@ -68,7 +68,7 @@ void OtelExporter::resolveUDPAddr(int reTry) {
 	hint.ai_addr = nullptr;
 	hint.ai_next = nullptr;
 
-	log("look up dns :" + std::string(this->addr_ip));
+	log("look up dns : " + std::string(this->addr_ip));
 	if (inet_addr(this->addr_ip) != INADDR_NONE) {
 		this->addr_in->sin_family = AF_INET;
 		this->addr_in->sin_addr.s_addr = inet_addr(this->addr_ip);
