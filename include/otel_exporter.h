@@ -42,7 +42,7 @@ class OtelExporter {
   int sock_fd = -1;
   struct sockaddr_in *addr_in{};
   const char *addr_ip{};
-  int addr_port{};
+  int addr_port = 0;
   struct addrinfo *addr_info{};
   struct addrinfo *current_addr_info{};
   explicit OtelExporter(const char *type);
@@ -63,7 +63,7 @@ class OtelExporter {
   // Loop while listening for completed responses.
   // Prints out the response from the server.
   void AsyncCompleteRpc();
-  void resolveUDPAddr();
+  void resolveUDPAddr(int reTry);
   void sendTracerByUDP(const std::string &data);
 };
 

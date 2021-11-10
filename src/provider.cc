@@ -187,7 +187,7 @@ void Provider::addTraceStates(const std::string &key, const std::string &value) 
 		states_map[ppid][key] = value;
 		traceStates = states_map[ppid];
 	}
-	set_string_attribute(resource->add_attributes(), key, value);
+	set_string_attribute(getResource()->add_attributes(), key, value);
 	auto iter = traceStates.begin();
 	bool first = true;
 	while (iter != traceStates.end()) {

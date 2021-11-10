@@ -81,6 +81,10 @@ void init_consumers() {
 
 	clean_consumers();
 
+	if (is_cli_sapi()) {
+		OPENTELEMETRY_G(consumer_nums) = OPENTELEMETRY_G(cli_consumer_nums);
+	}
+
 	try {
 		//Erase previous message queue
 		message_queue(
@@ -167,6 +171,9 @@ void opentelemetry_module_shutdown() {
 
 void opentelemetry_request_init() {
 	if (!is_enabled() || is_cli_sapi()) {
+		if (is_cli_sapi()) {
+			init_consumers();
+		}
 		return;
 	}
 	start_tracer("", "", opentelemetry::proto::trace::v1::Span_SpanKind::Span_SpanKind_SPAN_KIND_SERVER);
@@ -186,11 +193,6 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 
 	if (!is_has_provider()) {
 		OPENTELEMETRY_G(provider) = new Provider();
-
-		if (is_cli_sapi()) {
-			init_consumers();
-		}
-
 	}
 
 	if (is_has_provider()) {

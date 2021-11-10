@@ -17,41 +17,44 @@
 using namespace opentelemetry::proto::collector::trace::v1;
 
 OtelExporter::OtelExporter(const char *type) {
-	receiver_type = type;
+	this->receiver_type = type;
 }
 
 OtelExporter::~OtelExporter() {
 	if (isReceiverGRPC()) {
-		cq_.Shutdown();
+		this->cq_.Shutdown();
 	}
 	if (isReceiverUDP()) {
-		close(sock_fd);
+		close(this->sock_fd);
 	}
 };
 
 void OtelExporter::initGRPC(const std::shared_ptr<grpc::ChannelInterface> &channel) {
-	stub_ = TraceService::NewStub(channel);
+	this->stub_ = TraceService::NewStub(channel);
 }
 
 void OtelExporter::initUDP(const char *ip, int port) {
-	addr_ip = ip;
-	addr_port = port;
+	this->addr_ip = ip;
+	this->addr_port = port;
 	/* 建立udp socket */
-	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock_fd < 0) {
+	this->sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (this->sock_fd < 0) {
 		log("[opentelemetry] sock_fd open error:" + std::string(strerror(errno)));
 		return;
 	}
-	resolveUDPAddr();
+	this->resolveUDPAddr(3);
 	auto *pTimer = new CTimer("dns_lookup");
-	pTimer->AsyncLoop(OPENTELEMETRY_G(udp_look_up_time) * 1000, [this]() -> void { this->resolveUDPAddr(); });    //异步循环执行，间隔时间10毫秒
+	pTimer->AsyncLoop(OPENTELEMETRY_G(udp_look_up_time) * 1000, [this]() -> void { this->resolveUDPAddr(3); });    //异步循环执行，间隔时间10毫秒
 }
 
-void OtelExporter::resolveUDPAddr() {
-	struct addrinfo *aip;
+void OtelExporter::resolveUDPAddr(int reTry) {
+	if (reTry <= 0) {
+		log("[opentelemetry] resolveUDPAddr retry max times");
+		return;
+	}
+	reTry--;
 	struct addrinfo hint{};
 	char buf[INET_ADDRSTRLEN];
-	const char *addr;
 	int ilRc;
 	hint.ai_family = AF_UNSPEC; /* hint 的限定设置 */
 	hint.ai_socktype = SOCK_DGRAM; /* 这里可是设置 socket type . 比如 SOCK——DGRAM */
@@ -61,32 +64,46 @@ void OtelExporter::resolveUDPAddr() {
 	hint.ai_canonname = nullptr;
 	hint.ai_addr = nullptr;
 	hint.ai_next = nullptr;
-	ilRc = getaddrinfo(addr_ip, std::to_string(addr_port).c_str(), &hint, &addr_info);
-	if (ilRc < 0) {
-		log("[opentelemetry] get_addr_info error:" + std::string(gai_strerror(errno)));
-		memset(addr_in, 0, sizeof(*addr_in));
-		addr_in->sin_family = AF_INET;
-		addr_in->sin_addr.s_addr = inet_addr(addr_ip);
-		addr_in->sin_port = htons(addr_port);
+
+	if (inet_addr(this->addr_ip) != INADDR_NONE) {
+		memset(this->addr_in, 0, sizeof(*this->addr_in));
+		this->addr_in->sin_family = AF_INET;
+		this->addr_in->sin_addr.s_addr = inet_addr(this->addr_ip);
+		this->addr_in->sin_port = htons(this->addr_port);
 	} else {
-		current_addr_info = addr_info;
-		addr_in = (struct sockaddr_in *) current_addr_info->ai_addr;
+		ilRc = getaddrinfo(this->addr_ip, std::to_string(this->addr_port).c_str(), &hint, &this->addr_info);
+		if (ilRc < 0) {
+			log("[opentelemetry] get_addr_info error:" + std::string(gai_strerror(errno)));
+			log("[opentelemetry] resolveUDPAddr retry");
+			this->resolveUDPAddr(reTry);
+			return;
+		} else {
+			this->current_addr_info = this->addr_info;
+			this->addr_in = (struct sockaddr_in *) this->current_addr_info->ai_addr;
+		}
 	}
-	log("[opentelemetry] resolveUDPAddr ip : " + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)));
+	log("[opentelemetry] resolveUDPAddr ip : " + std::string(inet_ntop(AF_INET, &this->addr_in->sin_addr, buf, INET_ADDRSTRLEN)));
 }
 
 void OtelExporter::sendTracerByUDP(const std::string &data) {
-	if (sock_fd > 0 && addr_in != nullptr && !data.empty()) {
+	if (this->sock_fd > 0 && this->addr_in != nullptr && !data.empty()) {
+
+		if (this->current_addr_info == nullptr || this->addr_in == nullptr) {
+			log("[opentelemetry] resolveUDPAddr current_addr_info is nil ");
+			return;
+		}
 
 		int dataSize = static_cast<int>(data.size());
 		//udp 最大报文消息
 		int maxUdpSize = 60000;
 
 		if (dataSize <= maxUdpSize) {
-			ssize_t nums = sendto(sock_fd, data.c_str(), data.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
+			ssize_t nums = sendto(this->sock_fd, data.c_str(), data.size(), 0, (struct sockaddr *) this->addr_in, sizeof(*this->addr_in));
+			char buf[INET_ADDRSTRLEN];
 			if (nums < 0) {
-				char buf[INET_ADDRSTRLEN];
-				log("[opentelemetry] sendto message failed, ip:" + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()) + ", error:" + strerror(errno));
+				log("[opentelemetry] sendto message failed, ip:" + std::string(inet_ntop(AF_INET, &this->addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()) + ", error:" + strerror(errno));
+			} else if (is_debug()) {
+				log("[opentelemetry] sendto message success, ip:" + std::string(inet_ntop(AF_INET, &this->addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()));
 			}
 		} else {
 			//超过udp最大发包大小 分包发送
@@ -96,32 +113,34 @@ void OtelExporter::sendTracerByUDP(const std::string &data) {
 				//协议 md5:9,0:end:数据
 				auto warp = id + ":" + std::to_string(shards) + "," + std::to_string(i) + ":end:" + data.substr(i * maxUdpSize, maxUdpSize);
 				//防止丢包 多发一次
-				sendto(sock_fd, warp.c_str(), warp.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
-				ssize_t nums = sendto(sock_fd, warp.c_str(), warp.size(), 0, (struct sockaddr *) addr_in, sizeof(*addr_in));
+				sendto(this->sock_fd, warp.c_str(), warp.size(), 0, (struct sockaddr *) this->addr_in, sizeof(*this->addr_in));
+				ssize_t nums = sendto(this->sock_fd, warp.c_str(), warp.size(), 0, (struct sockaddr *) this->addr_in, sizeof(*this->addr_in));
+				char buf[INET_ADDRSTRLEN];
 				if (nums < 0) {
-					char buf[INET_ADDRSTRLEN];
-					log("[opentelemetry] sendto warp " + std::to_string(i) + " message failed, ip:" + std::string(inet_ntop(AF_INET, &addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()) + ", error:" + strerror(errno));
+					log("[opentelemetry] sendto message failed, ip:" + std::string(inet_ntop(AF_INET, &this->addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()) + ", error:" + strerror(errno));
+				} else if (is_debug()) {
+					log("[opentelemetry] sendto message success, ip:" + std::string(inet_ntop(AF_INET, &this->addr_in->sin_addr, buf, INET_ADDRSTRLEN)) + ", size:" + std::to_string(data.size()));
 				}
 			}
 		}
 
-		if (current_addr_info != nullptr) {
-			if (current_addr_info->ai_next != nullptr) {
-				current_addr_info = current_addr_info->ai_next;
+		if (this->current_addr_info != nullptr) {
+			if (this->current_addr_info->ai_next != nullptr) {
+				this->current_addr_info = this->current_addr_info->ai_next;
 			} else {
-				current_addr_info = addr_info;
+				this->current_addr_info = this->addr_info;
 			}
-			addr_in = (struct sockaddr_in *) current_addr_info->ai_addr;
+			this->addr_in = (struct sockaddr_in *) this->current_addr_info->ai_addr;
 		}
 	}
 }
 
 bool OtelExporter::isReceiverUDP() {
-	return is_equal(receiver_type, "udp");
+	return is_equal(this->receiver_type, "udp");
 }
 
 bool OtelExporter::isReceiverGRPC() {
-	return is_equal(receiver_type, "grpc");
+	return is_equal(this->receiver_type, "grpc");
 }
 
 void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int milliseconds) {
@@ -136,7 +155,7 @@ void OtelExporter::sendTracer(ExportTraceServiceRequest *request, long long int 
 
 	ExportTraceServiceResponse response;
 
-	grpc::Status status = stub_->Export(&context, *request, &response);
+	grpc::Status status = this->stub_->Export(&context, *request, &response);
 
 	if (!status.ok() && is_debug()) {
 		log("[opentelemetry] Export() failed: " + status.error_message() + " trace id : " + traceId(request->resource_spans().Get(0).instrumentation_library_spans().Get(0).spans().Get(0)));
@@ -173,7 +192,7 @@ void OtelExporter::AsyncCompleteRpc() {
 	bool ok = false;
 
 	// Block until the next result is available in the completion queue "cq".
-	while (cq_.Next(&got_tag, &ok)) {
+	while (this->cq_.Next(&got_tag, &ok)) {
 
 		// The tag in this example is the memory location of the call object
 		auto *call = static_cast<AsyncClientCall *>(got_tag);

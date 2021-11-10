@@ -33,7 +33,7 @@ PHP_FUNCTION (opentelemetry_start_cli_tracer) {
 	long kind = 0;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ssl",
-							  &traceparent, &traceparent_len, &tracestate, &tracestate_len, &kind) == FAILURE) {
+	                          &traceparent, &traceparent_len, &tracestate, &tracestate_len, &kind) == FAILURE) {
 		RETURN_FALSE;
 	}
 
@@ -102,7 +102,7 @@ PHP_FUNCTION (opentelemetry_add_tracestate) {
 		size_t value_len;
 
 		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss",
-								  &key, &key_len, &value, &value_len) == FAILURE) {
+		                          &key, &key_len, &value, &value_len) == FAILURE) {
 			RETURN_FALSE;
 		}
 
@@ -203,7 +203,7 @@ PHP_FUNCTION (opentelemetry_add_span) {
 
 		//name, kind, start_time_unix_nano, attributes
 		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slllsa",
-								  &name, &name_len, &kind, &start_time_unix_nano, &status_code, &status_message, &status_message_len, &attributes) == FAILURE) {
+		                          &name, &name_len, &kind, &start_time_unix_nano, &status_code, &status_message, &status_message_len, &attributes) == FAILURE) {
 			RETURN_FALSE;
 		}
 
@@ -251,7 +251,7 @@ PHP_FUNCTION (opentelemetry_add_resource_attribute) {
 		size_t value_len;
 
 		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss",
-								  &key, &key_len, &value, &value_len) == FAILURE) {
+		                          &key, &key_len, &value, &value_len) == FAILURE) {
 			RETURN_FALSE;
 		}
 
@@ -270,7 +270,7 @@ PHP_FUNCTION (opentelemetry_add_attribute) {
 		size_t value_len;
 
 		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss",
-								  &key, &key_len, &value, &value_len) == FAILURE) {
+		                          &key, &key_len, &value, &value_len) == FAILURE) {
 			RETURN_FALSE;
 		}
 
@@ -289,7 +289,7 @@ PHP_FUNCTION (opentelemetry_add_event) {
 		zval *attributes;
 
 		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa",
-								  &name, &name_len, &attributes) == FAILURE) {
+		                          &name, &name_len, &attributes) == FAILURE) {
 			RETURN_FALSE;
 		}
 
