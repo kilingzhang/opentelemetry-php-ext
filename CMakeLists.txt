@@ -57,9 +57,7 @@ include_directories(third_party/robin-map/include)
 
 find_package(protobuf CONFIG REQUIRED)
 find_package(grpc CONFIG REQUIRED)
-find_package(prometheus-cpp CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(opentelemetry-cpp CONFIG REQUIRED)
 
 # lib-opentelemetry
 link_directories(${LIBRARY_OUTPUT_PATH})

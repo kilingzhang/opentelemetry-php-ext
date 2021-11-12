@@ -1,5 +1,12 @@
 # opentelemetry-php-ext
 
+![release](https://img.shields.io/github/release/kilingzhang/opentelemetry-php-ext.svg)
+![PHP](https://img.shields.io/badge/PHP-%3E%3D%207.0-brightgreen.svg)
+![contributors](https://img.shields.io/github/contributors/kilingzhang/opentelemetry-php-ext.svg)
+![platform](https://img.shields.io/badge/platform-macos%20%7C%20linux-brightgreen.svg)
+![license](https://img.shields.io/badge/license-Apache%202.0-green.svg)
+![issues](https://img.shields.io/github/issues/kilingzhang/opentelemetry-php-ext.svg)
+
 ## 简介
 
 opentelemetry php 客户端。php扩展、底层无侵入埋点。无接入成本。尤其追求性能及可用性优化。
@@ -90,8 +97,6 @@ opentelemetry.max_time_consuming = 500
 opentelemetry.error_level = "E_ALL"
 ; 服务名称 可以在不同项目下的 php-fpm.conf 下设置 （优先推荐） 也可以通 opentelemetry.service_name_key  读取环境变量自动获取
 opentelemetry.service_name = "opentelemetry"
-; 如果设置了此key值。 会判断 opentelemetry.service_name 是否等于默认值opentelemetry 。如果为默认值则会从读取 $_SERVER["SINASRV_SERVER_NAME"]  
-opentelemetry.service_name_key = "SINASRV_SERVER_NAME"
 ; 日志目录
 opentelemetry.log_path = "/data1/opentelemetry/logs"
 ; otlp grpc上报地址 
