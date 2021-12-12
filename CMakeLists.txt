@@ -54,6 +54,7 @@ include_directories(${PHP_SOURCE}/sapi)
 include_directories(${PHP_SOURCE}/pear)
 include_directories(${PHP_SOURCE}/TSRM)
 include_directories(third_party/robin-map/include)
+include_directories(/usr/local/include)
 
 find_package(protobuf CONFIG REQUIRED)
 find_package(grpc CONFIG REQUIRED)

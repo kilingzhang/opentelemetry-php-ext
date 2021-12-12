@@ -34,7 +34,7 @@ void opentelemetry_mysqli_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		function_name = std::string(ZSTR_VAL(zf->internal_function.function_name));
 	}
 	name = find_trace_add_scope_name(zf->internal_function.function_name, zf->internal_function.scope,
-									 zf->internal_function.fn_flags);
+	                                 zf->internal_function.fn_flags);
 
 	std::string cmd = function_name;
 	std::transform(function_name.begin(), function_name.end(), cmd.begin(), ::tolower);
@@ -146,7 +146,7 @@ void register_zend_hook_mysqli() {
 		"mysqli_sqlstate", "mysqli_ssl_set", "mysqli_stat", "mysqli_stmt_init", "mysqli_store_result",
 		"mysqli_thread_id", "mysqli_thread_safe", "mysqli_use_result", "mysqli_warning_count"};
 	zend_function *old_function;
-	for (const auto &item : mysqliKeysCommands) {
+	for (const auto &item: mysqliKeysCommands) {
 		if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 			CG(function_table), item.c_str())) !=
 			nullptr) {
@@ -158,7 +158,7 @@ void register_zend_hook_mysqli() {
 
 void unregister_zend_hook_mysqli() {
 	zend_function *old_function;
-	for (const auto &item : mysqliKeysCommands) {
+	for (const auto &item: mysqliKeysCommands) {
 		if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 			CG(function_table), item.c_str())) !=
 			nullptr) {

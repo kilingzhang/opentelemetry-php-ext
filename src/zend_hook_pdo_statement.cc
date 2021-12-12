@@ -31,7 +31,7 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		function_name = std::string(ZSTR_VAL(zf->internal_function.function_name));
 	}
 	name = find_trace_add_scope_name(zf->internal_function.function_name, zf->internal_function.scope,
-									 zf->internal_function.fn_flags);
+	                                 zf->internal_function.fn_flags);
 
 	std::string cmd = function_name;
 	std::transform(function_name.begin(), function_name.end(), cmd.begin(), ::tolower);
@@ -59,6 +59,10 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				set_string_attribute(span->add_attributes(), "db.system", db_type);
 			}
 
+			if (stmt->dbh->username != nullptr) {
+				set_string_attribute(span->add_attributes(), "db.user", stmt->dbh->username);
+			}
+
 			if (!is_set_db_system) {
 				set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_MYSQL);
 			}
@@ -71,25 +75,22 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				std::regex ws_re(";");
 				std::regex kv_re("=");
 				std::vector<std::string> items(std::sregex_token_iterator(source.begin(), source.end(), ws_re, -1),
-											   std::sregex_token_iterator());
+				                               std::sregex_token_iterator());
 
-				for (auto item:items) {
+				for (auto item: items) {
 					std::vector<std::string> kv(std::sregex_token_iterator(item.begin(), item.end(), kv_re, -1),
-												std::sregex_token_iterator());
+					                            std::sregex_token_iterator());
 					if (kv.size() >= 2) {
-
 						if (kv[0] == "host") {
-
 							if (inet_addr(kv[1].c_str()) != INADDR_NONE) {
 								set_string_attribute(span->add_attributes(), "net.peer.ip", kv[1]);
 							} else {
 								set_string_attribute(span->add_attributes(), "net.peer.name", kv[1]);
 							}
-
-						}
-
-						if (kv[0] == "port") {
+						} else if (kv[0] == "port") {
 							set_int64_attribute(span->add_attributes(), "net.peer.port", strtol(kv[1].c_str(), nullptr, 10));
+						} else if (kv[0] == "dbname") {
+							set_string_attribute(span->add_attributes(), "db.name", kv[1]);
 						}
 					}
 				}
@@ -107,7 +108,47 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
 	}
 
 	if (is_has_provider()) {
-		Provider::okEnd(span);
+		auto *stmt = (pdo_stmt_t *) Z_PDO_STMT_P(&(execute_data->This));
+		if (
+			stmt != nullptr &&
+				!is_equal_const(stmt->error_code, PDO_ERR_NONE)
+			) {
+			pdo_error_type *pdo_err = &stmt->error_code;
+			char *supp = nullptr;
+			zend_long native_code = 0;
+			zend_string *message = nullptr;
+			zval info;
+			ZVAL_UNDEF(&info);
+			if (stmt->dbh->methods->fetch_err) {
+				array_init(&info);
+				add_next_index_string(&info, *pdo_err);
+				if (stmt->dbh->methods->fetch_err(stmt->dbh, stmt, &info)) {
+					zval *item;
+					if ((item = zend_hash_index_find(Z_ARRVAL(info), 1)) != nullptr) {
+						native_code = Z_LVAL_P(item);
+					}
+					if ((item = zend_hash_index_find(Z_ARRVAL(info), 2)) != nullptr) {
+						supp = estrndup(Z_STRVAL_P(item), Z_STRLEN_P(item));
+					}
+				}
+			}
+			if (supp) {
+				message = strpprintf(0, "SQLSTATE[%s] [" ZEND_LONG_FMT "] %s", *pdo_err, native_code, supp);
+			} else {
+				message = strpprintf(0, "SQLSTATE[%s]", *pdo_err);
+			}
+
+			Provider::errorEnd(span, std::string(message->val));
+			if (!Z_ISUNDEF(info)) {
+				zval_ptr_dtor(&info);
+			}
+			zend_string_release(message);
+			if (supp) {
+				efree(supp);
+			}
+		} else {
+			Provider::okEnd(span);
+		}
 	}
 
 	cmd.clear();
@@ -119,13 +160,13 @@ void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS) {
 }
 
 void register_zend_hook_pdo_statement() {
-	pdoStmKeysCommands = {"bindcolumn", "bindparam", "bindvalue", "closecursor", "columncount", "debugdumpparams",
-		"errorcode", "errorinfo", "execute", "fetch", "fetchall", "fetchcolumn", "fetchobject",
-		"getattribute", "getcolumnMeta", "nextrowset", "rowcount", "setattribute", "setfetchmode"};
+	pdoStmKeysCommands = {
+		"execute"
+	};
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("pdostatement")) != nullptr) {
-		for (const auto &item : pdoStmKeysCommands) {
+		for (const auto &item: pdoStmKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -140,7 +181,7 @@ void unregister_zend_hook_pdo_statement() {
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("pdostatement")) != nullptr) {
-		for (const auto &item : pdoStmKeysCommands) {
+		for (const auto &item: pdoStmKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {

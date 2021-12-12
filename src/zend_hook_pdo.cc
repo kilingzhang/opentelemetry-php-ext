@@ -59,9 +59,22 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 						set_string_attribute(span->add_attributes(), "db.statement", Z_STRVAL_P(p));
 					} else {
 						source = Z_STRVAL_P(p);
+						//username
+						p = ZEND_CALL_ARG(execute_data, 2);
+						set_string_attribute(span->add_attributes(), "db.user", Z_STRVAL_P(p));
 					}
 					break;
 			}
+		}
+
+		if (function_name == "__construct") {
+			set_string_attribute(span->add_attributes(), "db.operation", "connect");
+		} else if (function_name == "begintransaction") {
+			set_string_attribute(span->add_attributes(), "db.operation", "begin");
+		} else if (function_name == "rollback") {
+			set_string_attribute(span->add_attributes(), "db.operation", "rollback");
+		} else if (function_name == "commit") {
+			set_string_attribute(span->add_attributes(), "db.operation", "commit");
 		}
 
 		char db_type[64] = {0};
@@ -72,6 +85,10 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				memcpy(db_type, (char *) dbh->driver->driver_name, dbh->driver->driver_name_len);
 				is_set_db_system = true;
 				set_string_attribute(span->add_attributes(), "db.system", db_type);
+			}
+
+			if (dbh->username != nullptr) {
+				set_string_attribute(span->add_attributes(), "db.user", dbh->username);
 			}
 
 			if (dbh->data_source != nullptr && db_type[0] != '\0') {
@@ -87,30 +104,25 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				std::vector<std::string> items(std::sregex_token_iterator(source.begin(), source.end(), ws_re, -1),
 				                               std::sregex_token_iterator());
 
-				for (auto item:items) {
+				for (auto item: items) {
 					std::vector<std::string> kv(std::sregex_token_iterator(item.begin(), item.end(), kv_re, -1),
 					                            std::sregex_token_iterator());
 					if (kv.size() >= 2) {
-
-						if (kv[0] == "host") {
-
+						if (kv[0] == "host" || kv[0] == "mysql:host") {
 							if (inet_addr(kv[1].c_str()) != INADDR_NONE) {
 								set_string_attribute(span->add_attributes(), "net.peer.ip", kv[1]);
 							} else {
 								set_string_attribute(span->add_attributes(), "net.peer.name", kv[1]);
 							}
-
-						}
-
-						if (kv[0] == "port") {
+						} else if (kv[0] == "port") {
 							set_int64_attribute(span->add_attributes(), "net.peer.port", strtol(kv[1].c_str(), nullptr, 10));
+						} else if (kv[0] == "dbname") {
+							set_string_attribute(span->add_attributes(), "db.name", kv[1]);
 						}
-
 					}
 				}
 
 				set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
-
 			}
 
 		}
@@ -126,7 +138,53 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 	}
 
 	if (is_has_provider()) {
-		Provider::okEnd(span);
+		pdo_dbh_t *dbh = Z_PDO_DBH_P(&(execute_data->This));
+		if (
+			dbh != nullptr &&
+				(!is_equal_const(dbh->error_code, PDO_ERR_NONE) ||
+					(dbh->query_stmt != nullptr && !is_equal_const(dbh->query_stmt->error_code, PDO_ERR_NONE)))
+			) {
+			pdo_error_type *pdo_err = nullptr;
+			char *supp = nullptr;
+			zend_long native_code = 0;
+			zend_string *message = nullptr;
+			zval info;
+			ZVAL_UNDEF(&info);
+			if (!is_equal_const(dbh->error_code, PDO_ERR_NONE)) {
+				pdo_err = &dbh->error_code;
+			} else if (!is_equal_const(dbh->query_stmt->error_code, PDO_ERR_NONE)) {
+				pdo_err = &dbh->query_stmt->error_code;
+			}
+			if (dbh->methods->fetch_err) {
+				array_init(&info);
+				add_next_index_string(&info, *pdo_err);
+				if (dbh->methods->fetch_err(dbh, dbh->query_stmt, &info)) {
+					zval *item;
+					if ((item = zend_hash_index_find(Z_ARRVAL(info), 1)) != nullptr) {
+						native_code = Z_LVAL_P(item);
+					}
+					if ((item = zend_hash_index_find(Z_ARRVAL(info), 2)) != nullptr) {
+						supp = estrndup(Z_STRVAL_P(item), Z_STRLEN_P(item));
+					}
+				}
+			}
+			if (supp) {
+				message = strpprintf(0, "SQLSTATE[%s] [" ZEND_LONG_FMT "] %s", *pdo_err, native_code, supp);
+			} else {
+				message = strpprintf(0, "SQLSTATE[%s]", *pdo_err);
+			}
+
+			Provider::errorEnd(span, std::string(message->val));
+			if (!Z_ISUNDEF(info)) {
+				zval_ptr_dtor(&info);
+			}
+			zend_string_release(message);
+			if (supp) {
+				efree(supp);
+			}
+		} else {
+			Provider::okEnd(span);
+		}
 	}
 
 	cmd.clear();
@@ -138,13 +196,11 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 }
 
 void register_zend_hook_pdo() {
-	pdoKeysCommands = {"__construct", "begintransaction", "commit", "errorcode", "errorinfo", "exec", "getattribute",
-		"getavailabledrivers", "intransaction", "lastinsertid", "prepare", "query", "quote", "rollback",
-		"setattribute"};
+	pdoKeysCommands = {"__construct", "begintransaction", "rollback", "commit", "exec", "query"};
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("pdo")) != nullptr) {
-		for (const auto &item : pdoKeysCommands) {
+		for (const auto &item: pdoKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -159,7 +215,7 @@ void unregister_zend_hook_pdo() {
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("pdo")) != nullptr) {
-		for (const auto &item : pdoKeysCommands) {
+		for (const auto &item: pdoKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
