@@ -159,6 +159,8 @@ void Provider::clean() {
 			request = nullptr;
 			is_sampled = false;
 			states.clear();
+			redisException.clear();
+			redisException.shrink_to_fit();
 		}
 	} else {
 		pid_t ppid = get_current_ppid();
@@ -172,6 +174,9 @@ void Provider::clean() {
 		}
 		if (states_map.find(ppid) != states_map.end()) {
 			states_map[ppid].clear();
+		}
+		if (redisExceptions.find(ppid) != redisExceptions.end()) {
+			redisExceptions.erase(ppid);
 		}
 	}
 }
@@ -235,7 +240,7 @@ void Provider::parseTraceParent(const std::string &traceparent) {
 
 void Provider::parseTraceState(const std::string &tracestate) {
 	if (!tracestate.empty()) {
-		for (const auto &item : explode(",", tracestate)) {
+		for (const auto &item: explode(",", tracestate)) {
 			std::vector<std::string> kv = explode("=", item);
 			if (kv.size() == 2) {
 				addTraceStates(kv[0], kv[1]);
@@ -281,3 +286,30 @@ long Provider::count() const {
 	return counter;
 }
 
+std::string Provider::getRedisException() {
+	if (!is_cli_sapi()) {
+		return redisException;
+	} else {
+		pid_t ppid = get_current_ppid();
+		if (redisExceptions.find(ppid) != redisExceptions.end() && !redisExceptions[ppid].empty()) {
+			return redisExceptions[ppid];
+		}
+	}
+	return "";
+}
+void Provider::setRedisException(const std::string &message) {
+	if (!is_cli_sapi()) {
+		redisException = message;
+	} else {
+		pid_t ppid = get_current_ppid();
+		redisExceptions[ppid] = message;
+	}
+}
+
+void Provider::clearRedisException() {
+	setRedisException("");
+}
+
+bool Provider::isRedisException() {
+	return !getRedisException().empty();
+}

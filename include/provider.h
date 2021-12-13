@@ -32,6 +32,11 @@ class Provider {
 
   opentelemetry::proto::trace::v1::Span latestSpan();
 
+  std::string getRedisException();
+  void setRedisException(const std::string &message);
+  void clearRedisException();
+  bool isRedisException();
+
   bool isSampled();
 
   void setSampled(bool isSampled);
@@ -65,6 +70,8 @@ class Provider {
   tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::Span *> firstSpans;
   bool is_sampled = false;
   tsl::robin_map<pid_t, bool> sampled_map;
+  tsl::robin_map<pid_t, std::string> redisExceptions;
+  std::string redisException;
   tsl::robin_map<std::string, std::string> states;
   tsl::robin_map<pid_t, tsl::robin_map<std::string, std::string>> states_map;
 };

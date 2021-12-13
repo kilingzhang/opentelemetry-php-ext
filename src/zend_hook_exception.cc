@@ -64,12 +64,12 @@ void opentelemetry_throw_exception_hook(zval *exception) {
 			} else {
 				if (caller->func->common.function_name) {
 					function_name = find_trace_add_scope_name(caller->func->common.function_name,
-															  caller->func->common.scope,
-															  caller->func->common.fn_flags);
+					                                          caller->func->common.scope,
+					                                          caller->func->common.fn_flags);
 				} else if (caller->func->internal_function.function_name) {
 					function_name = find_trace_add_scope_name(caller->func->internal_function.function_name,
-															  caller->func->internal_function.scope,
-															  caller->func->internal_function.fn_flags);
+					                                          caller->func->internal_function.scope,
+					                                          caller->func->internal_function.fn_flags);
 				}
 			}
 
@@ -81,6 +81,11 @@ void opentelemetry_throw_exception_hook(zval *exception) {
 			set_string_attribute(span->add_attributes(), "exception.type", Z_OBJ_P(exception)->ce->name->val);
 			set_string_attribute(span->add_attributes(), "exception.message", exception_message);
 			set_string_attribute(span->add_attributes(), "exception.stacktrace", exception_file.append(":").append(std::to_string(exception_line)));
+
+			//记录redis异常信息
+			if (is_equal("RedisException", Z_OBJ_P(exception)->ce->name->val)) {
+				OPENTELEMETRY_G(provider)->setRedisException(exception_message);
+			}
 
 			std::string code_stacktrace = find_code_stacktrace(caller);
 			set_string_attribute(span->add_attributes(), "code.stacktrace", code_stacktrace);

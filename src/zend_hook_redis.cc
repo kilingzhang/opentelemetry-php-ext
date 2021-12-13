@@ -27,7 +27,7 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		function_name = std::string(ZSTR_VAL(zf->internal_function.function_name));
 	}
 	name = find_trace_add_scope_name(zf->internal_function.function_name, zf->internal_function.scope,
-									 zf->internal_function.fn_flags);
+	                                 zf->internal_function.fn_flags);
 
 	std::string cmd = function_name;
 	std::transform(function_name.begin(), function_name.end(), cmd.begin(), ::tolower);
@@ -36,6 +36,7 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
 		span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
 		set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_REDIS);
+		set_string_attribute(span->add_attributes(), "db.operation", cmd);
 		span->set_parent_span_id(parentId);
 		zend_execute_data *caller = execute_data->prev_execute_data;
 		if (caller != nullptr && caller->func) {
@@ -96,8 +97,12 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				convert_to_string(&str_p);
 			}
 
-			if (i == 1) {
+			if (i == 1 && !is_equal(Z_STRVAL_P(&str_p), "connect")) {
 				set_string_attribute(span->add_attributes(), "db.cache.key", Z_STRVAL_P(&str_p));
+			} else if (i == 1 && !is_equal(Z_STRVAL_P(&str_p), "connect")) {
+
+			} else if (i == 2 && !is_equal(Z_STRVAL_P(&str_p), "connect")) {
+
 			}
 			char *tmp = zend_str_tolower_dup(Z_STRVAL_P(&str_p), Z_STRLEN_P(&str_p));
 			command = command.append(tmp);
@@ -127,7 +132,12 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
 	}
 
 	if (is_has_provider()) {
-		Provider::okEnd(span);
+		if (OPENTELEMETRY_G(provider)->isRedisException()) {
+			Provider::errorEnd(span, OPENTELEMETRY_G(provider)->getRedisException());
+			OPENTELEMETRY_G(provider)->clearRedisException();
+		} else {
+			Provider::okEnd(span);
+		}
 	}
 
 	cmd.clear();
@@ -154,7 +164,7 @@ void register_zend_hook_redis() {
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("redis")) != nullptr) {
-		for (const auto &item : redisKeysCommands) {
+		for (const auto &item: redisKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -165,7 +175,7 @@ void register_zend_hook_redis() {
 	}
 
 	if ((old_class = OPENTELEMETRY_OLD_CN("rediscluster")) != nullptr) {
-		for (const auto &item : redisKeysCommands) {
+		for (const auto &item: redisKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -180,7 +190,7 @@ void unregister_zend_hook_redis() {
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("redis")) != nullptr) {
-		for (const auto &item : redisKeysCommands) {
+		for (const auto &item: redisKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -190,7 +200,7 @@ void unregister_zend_hook_redis() {
 	}
 
 	if ((old_class = OPENTELEMETRY_OLD_CN("rediscluster")) != nullptr) {
-		for (const auto &item : redisKeysCommands) {
+		for (const auto &item: redisKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
