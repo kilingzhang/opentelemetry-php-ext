@@ -114,9 +114,9 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 							} else {
 								set_string_attribute(span->add_attributes(), "net.peer.name", kv[1]);
 							}
-						} else if (kv[0] == "port") {
+						} else if (kv[0] == "port" || kv[0] == "mysql:port") {
 							set_int64_attribute(span->add_attributes(), "net.peer.port", strtol(kv[1].c_str(), nullptr, 10));
-						} else if (kv[0] == "dbname") {
+						} else if (kv[0] == "dbname" || kv[0] == "mysql:dbname") {
 							set_string_attribute(span->add_attributes(), "db.name", kv[1]);
 						}
 					}
