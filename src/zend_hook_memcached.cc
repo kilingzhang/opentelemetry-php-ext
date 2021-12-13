@@ -29,7 +29,7 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		function_name = std::string(ZSTR_VAL(zf->internal_function.function_name));
 	}
 	name = find_trace_add_scope_name(zf->internal_function.function_name, zf->internal_function.scope,
-									 zf->internal_function.fn_flags);
+	                                 zf->internal_function.fn_flags);
 
 	std::string cmd = function_name;
 	std::transform(function_name.begin(), function_name.end(), cmd.begin(), ::tolower);
@@ -39,6 +39,8 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		std::string parentId = OPENTELEMETRY_G(provider)->latestSpan().span_id();
 		span = OPENTELEMETRY_G(provider)->createSpan(name, Span_SpanKind_SPAN_KIND_CLIENT);
 		set_string_attribute(span->add_attributes(), "db.system", COMPONENTS_MEMCACHED);
+		set_string_attribute(span->add_attributes(), "db.operation", cmd);
+
 		span->set_parent_span_id(parentId);
 		zend_execute_data *caller = execute_data->prev_execute_data;
 		if (caller != nullptr && caller->func) {
@@ -131,7 +133,20 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 	}
 
 	if (is_has_provider()) {
-		Provider::okEnd(span);
+
+		zval *self = &(execute_data->This);
+		zval zval_result;
+		zend_call_method(self, Z_OBJCE_P(self), nullptr, ZEND_STRL("getresultmessage"), &zval_result, 0, nullptr, nullptr);
+		if (!Z_ISUNDEF(zval_result) && Z_TYPE(zval_result) == IS_STRING) {
+			std::string result = ZSTR_VAL(Z_STR(zval_result));
+			if (is_equal(result, "SUCCESS")) {
+				Provider::okEnd(span);
+			} else {
+				Provider::errorEnd(span, result);
+			}
+		} else {
+			Provider::errorEnd(span, "UN_KNOW");
+		}
 	}
 
 	cmd.clear();
@@ -148,7 +163,7 @@ void register_zend_hook_memcached() {
 		"getmulti", "getmultibykey", "getallkeys", "delete", "deletebykey", "deletemulti",
 		"deletemultibykey", "increment", "incrementbykey", "decrement", "decrementbykey", "getstats",
 		"ispersistent", "ispristine", "flush", "flushbuffers", "getdelayed", "getdelayedbykey", "fetch",
-		"fetchall", "getresultcode", "getserverlist", "resetserverlist", "getversion", "quit", "setsaslauthdata", "touch", "touchbykey"
+		"fetchall", "getserverlist", "resetserverlist", "getversion", "quit", "setsaslauthdata", "touch", "touchbykey"
 	};
 	mecStrKeysCommands = {"set", "setbykey", "setmulti", "setmultibykey", "add", "addbykey", "replace", "replacebykey",
 		"append", "appendbykey", "prepend", "prependbykey", "cas", "casbykey", "get", "getbykey",
@@ -157,7 +172,7 @@ void register_zend_hook_memcached() {
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("memcached")) != nullptr) {
-		for (const auto &item : mecKeysCommands) {
+		for (const auto &item: mecKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -172,7 +187,7 @@ void unregister_zend_hook_memcached() {
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("memcached")) != nullptr) {
-		for (const auto &item : mecKeysCommands) {
+		for (const auto &item: mecKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
