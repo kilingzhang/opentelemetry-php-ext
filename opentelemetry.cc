@@ -50,7 +50,7 @@ PHP_INI_BEGIN()
 		STD_PHP_INI_ENTRY("opentelemetry.consumer_nums", "1", PHP_INI_PERDIR, OnUpdateLong, consumer_nums, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.cli_consumer_nums", "1", PHP_INI_PERDIR, OnUpdateLong, cli_consumer_nums, zend_opentelemetry_globals, opentelemetry_globals)
 		STD_PHP_INI_ENTRY("opentelemetry.grpc_timeout_milliseconds", "100", PHP_INI_PERDIR, OnUpdateLong, grpc_timeout_milliseconds, zend_opentelemetry_globals, opentelemetry_globals)
-		STD_PHP_INI_ENTRY("opentelemetry.environment", PHP_OPENTELEMETRY_ENVIRONMENT, PHP_INI_PERDIR, OnUpdateString, environment, zend_opentelemetry_globals, opentelemetry_globals)
+		STD_PHP_INI_ENTRY("opentelemetry.resource_attributes", "", PHP_INI_PERDIR, OnUpdateString, resource_attributes, zend_opentelemetry_globals, opentelemetry_globals)
 PHP_INI_END()
 
 
@@ -102,7 +102,6 @@ const zend_function_entry opentelemetry_functions[] = {
 	PHP_FE(opentelemetry_get_service_ip, NULL)
 	PHP_FE(opentelemetry_get_ppid, NULL)
 	PHP_FE(opentelemetry_get_unix_nano, NULL)
-	PHP_FE(opentelemetry_get_environment, NULL)
 	PHP_FE(opentelemetry_add_span, NULL)
 	PHP_FE(opentelemetry_add_resource_attribute, NULL)
 	PHP_FE(opentelemetry_add_attribute, NULL)

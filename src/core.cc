@@ -236,7 +236,7 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 
 	} else {
 
-		uri = find_server_string("SCRIPT_NAME", sizeof("SCRIPT_NAME") - 1);
+		uri = find_server_string("PATH_INFO", sizeof("PATH_INFO") - 1);
 		traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
 		tracestate = find_server_string("HTTP_TRACESTATE", sizeof("HTTP_TRACESTATE") - 1);
 		auto span = OPENTELEMETRY_G(provider)->createFirstSpan(uri, kind);

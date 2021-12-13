@@ -13,6 +13,7 @@ using namespace opentelemetry::proto::trace::v1;
 
 std::vector<std::string> mecKeysCommands;
 std::vector<std::string> mecStrKeysCommands;
+std::vector<std::string> mecHitKeysCommands;
 
 void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
@@ -140,6 +141,12 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		if (!Z_ISUNDEF(zval_result) && Z_TYPE(zval_result) == IS_STRING) {
 			std::string result = ZSTR_VAL(Z_STR(zval_result));
 			if (is_equal(result, "SUCCESS")) {
+				if (std::find(mecHitKeysCommands.begin(), mecHitKeysCommands.end(), cmd) != mecHitKeysCommands.end()) {
+					set_bool_attribute(span->add_attributes(), "db.cache.hit", true);
+				}
+				Provider::okEnd(span);
+			} else if (is_equal(result, "NOT FOUND")) {
+				set_bool_attribute(span->add_attributes(), "db.cache.hit", false);
 				Provider::okEnd(span);
 			} else {
 				Provider::errorEnd(span, result);
@@ -169,6 +176,7 @@ void register_zend_hook_memcached() {
 		"append", "appendbykey", "prepend", "prependbykey", "cas", "casbykey", "get", "getbykey",
 		"getmulti", "getmultibykey", "getallkeys", "delete", "deletebykey", "deletemulti",
 		"deletemultibykey", "increment", "incrementbykey", "decrement", "decrementbykey"};
+	mecHitKeysCommands = {"get", "getbykey", "getmulti", "getmultibykey", "getallkeys"};
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("memcached")) != nullptr) {
@@ -197,4 +205,5 @@ void unregister_zend_hook_memcached() {
 	}
 	mecKeysCommands.clear();
 	mecStrKeysCommands.clear();
+	mecHitKeysCommands.clear();
 }

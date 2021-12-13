@@ -170,15 +170,18 @@ void opentelemetry_pdo_handler(INTERNAL_FUNCTION_PARAMETERS) {
 			}
 			if (supp) {
 				message = strpprintf(0, "SQLSTATE[%s] [" ZEND_LONG_FMT "] %s", *pdo_err, native_code, supp);
-			} else {
-				message = strpprintf(0, "SQLSTATE[%s]", *pdo_err);
 			}
 
-			Provider::errorEnd(span, std::string(message->val));
+			if (message) {
+				Provider::errorEnd(span, std::string(message->val));
+				zend_string_release(message);
+			} else {
+				Provider::okEnd(span);
+			}
+
 			if (!Z_ISUNDEF(info)) {
 				zval_ptr_dtor(&info);
 			}
-			zend_string_release(message);
 			if (supp) {
 				efree(supp);
 			}

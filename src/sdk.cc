@@ -179,15 +179,6 @@ PHP_FUNCTION (opentelemetry_get_unix_nano) {
  * @param execute_data
  * @param return_value
  */
-PHP_FUNCTION (opentelemetry_get_environment) {
-	RETURN_STRING(OPENTELEMETRY_G(environment));
-}
-
-/**
- *
- * @param execute_data
- * @param return_value
- */
 PHP_FUNCTION (opentelemetry_add_span) {
 
 	if (is_has_provider()) {

@@ -18,6 +18,7 @@ using namespace opentelemetry::proto::resource::v1;
 using namespace opentelemetry::proto::collector::trace::v1;
 
 Provider::Provider() = default;
+
 Provider::~Provider() = default;
 
 ExportTraceServiceRequest *Provider::getRequest() {
@@ -42,6 +43,7 @@ Resource *Provider::getResource() {
 }
 
 ResourceSpans *Provider::getTracer() {
+
 	if (!is_cli_sapi()) {
 		if (!request) {
 			request = new ExportTraceServiceRequest();
@@ -54,29 +56,42 @@ ResourceSpans *Provider::getTracer() {
 			set_string_attribute(resource->add_attributes(), "os.type", PLATFORM_NAME);
 			set_string_attribute(resource->add_attributes(), "process.pid", std::to_string(getpid()));
 			set_string_attribute(resource->add_attributes(), "telemetry.sdk.language", "php");
-			set_string_attribute(resource->add_attributes(), "deployment.environment", OPENTELEMETRY_G(environment));
-//      resourceSpan->set_allocated_resource(resource);
+			std::string resource_attributes = OPENTELEMETRY_G(resource_attributes);
+			if (!resource_attributes.empty()) {
+				for (const auto &item: explode(",", resource_attributes)) {
+					std::vector<std::string> kv = explode("=", item);
+					if (kv.size() == 2 && !kv[0].empty() && !kv[1].empty()) {
+						set_string_attribute(resource->add_attributes(), kv[0], kv[1]);
+					}
+				}
+			}
 		}
 		return resourceSpan;
 	} else {
 		pid_t ppid = get_current_ppid();
 		if (requests.find(ppid) != requests.end()) {
 			return resourceSpans[ppid];
-		} else {
-			requests[ppid] = new ExportTraceServiceRequest();
-			resourceSpans[ppid] = requests[ppid]->add_resource_spans();
-			resources[ppid] = resourceSpans[ppid]->resource().New();
-			resources[ppid]->set_dropped_attributes_count(0);
-			set_string_attribute(resources[ppid]->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
-			set_string_attribute(resources[ppid]->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
-			set_string_attribute(resources[ppid]->add_attributes(), "net.host.name", OPENTELEMETRY_G(hostname));
-			set_string_attribute(resources[ppid]->add_attributes(), "os.type", PLATFORM_NAME);
-			set_string_attribute(resources[ppid]->add_attributes(), "process.pid", std::to_string(getpid()));
-			set_string_attribute(resources[ppid]->add_attributes(), "telemetry.sdk.language", "php");
-			set_string_attribute(resources[ppid]->add_attributes(), "deployment.environment", OPENTELEMETRY_G(environment));
-//      resourceSpans[ppid]->set_allocated_resource(resources[ppid]);
-			return resourceSpans[ppid];
 		}
+		requests[ppid] = new ExportTraceServiceRequest();
+		resourceSpans[ppid] = requests[ppid]->add_resource_spans();
+		resources[ppid] = resourceSpans[ppid]->resource().New();
+		resources[ppid]->set_dropped_attributes_count(0);
+		set_string_attribute(resources[ppid]->add_attributes(), "service.name", OPENTELEMETRY_G(service_name));
+		set_string_attribute(resources[ppid]->add_attributes(), "net.host.ip", OPENTELEMETRY_G(ipv4));
+		set_string_attribute(resources[ppid]->add_attributes(), "net.host.name", OPENTELEMETRY_G(hostname));
+		set_string_attribute(resources[ppid]->add_attributes(), "os.type", PLATFORM_NAME);
+		set_string_attribute(resources[ppid]->add_attributes(), "process.pid", std::to_string(getpid()));
+		set_string_attribute(resources[ppid]->add_attributes(), "telemetry.sdk.language", "php");
+		std::string resource_attributes = OPENTELEMETRY_G(resource_attributes);
+		if (!resource_attributes.empty()) {
+			for (const auto &item: explode(",", resource_attributes)) {
+				std::vector<std::string> kv = explode("=", item);
+				if (kv.size() == 2 && !kv[0].empty() && !kv[1].empty()) {
+					set_string_attribute(resources[ppid]->add_attributes(), kv[0], kv[1]);
+				}
+			}
+		}
+		return resourceSpans[ppid];
 	}
 }
 
@@ -297,6 +312,7 @@ std::string Provider::getRedisException() {
 	}
 	return "";
 }
+
 void Provider::setRedisException(const std::string &message) {
 	if (!is_cli_sapi()) {
 		redisException = message;

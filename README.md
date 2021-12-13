@@ -110,8 +110,8 @@ opentelemetry.max_message_size = 256000
 opentelemetry.max_queue_length = 1024
 ; 队列消费者线程数 默认 1
 opentelemetry.consumer_nums = 10
-;  环境 staging production 默认 staging
-opentelemetry.environment = "staging"
+; resource_attributes
+opentelemetry.resource_attributes = "deployment.environment=staging"
 ```
 
 ## 压测
