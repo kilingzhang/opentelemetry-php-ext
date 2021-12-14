@@ -236,7 +236,13 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 
 	} else {
 
-		uri = find_server_string("PATH_INFO", sizeof("PATH_INFO") - 1);
+		std::string request_uri = find_server_string("REQUEST_URI", sizeof("REQUEST_URI") - 1);
+		size_t pos = request_uri.find('?');
+		if (pos != std::string::npos) {
+			uri = request_uri.substr(0, pos);
+		} else {
+			uri = request_uri;
+		}
 		traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
 		tracestate = find_server_string("HTTP_TRACESTATE", sizeof("HTTP_TRACESTATE") - 1);
 		auto span = OPENTELEMETRY_G(provider)->createFirstSpan(uri, kind);
@@ -248,7 +254,6 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 		std::string request_http_port = find_server_string("SERVER_PORT", sizeof("SERVER_PORT") - 1);
 		std::string request_user_agent = find_server_string("HTTP_USER_AGENT", sizeof("HTTP_USER_AGENT") - 1);
 		std::string request_remote_ip = find_server_string("REMOTE_ADDR", sizeof("REMOTE_ADDR") - 1);
-		std::string request_uri = find_server_string("REQUEST_URI", sizeof("REQUEST_URI") - 1);
 
 		set_string_attribute(span->add_attributes(), "http.method", request_method);
 		set_string_attribute(span->add_attributes(), "http.host", request_http_host);

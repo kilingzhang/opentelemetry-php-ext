@@ -46,6 +46,8 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
 			}
 		}
 
+		set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
+
 		uint32_t arg_count = ZEND_CALL_NUM_ARGS(execute_data);
 		std::string command = cmd;
 		command = command.append(" ");
@@ -61,8 +63,6 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				Z_TYPE(zval_port) == IS_LONG) {
 				std::string host = ZSTR_VAL(Z_STR(zval_host));
 				long port = Z_LVAL(zval_port);
-
-				set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
 
 				if (inet_addr(host.c_str()) != INADDR_NONE) {
 					set_string_attribute(span->add_attributes(), "net.peer.ip", host);
@@ -97,13 +97,20 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
 				convert_to_string(&str_p);
 			}
 
-			if (i == 1 && !is_equal(Z_STRVAL_P(&str_p), "connect")) {
+			if (i == 1 && !is_equal(cmd, "connect")) {
 				set_string_attribute(span->add_attributes(), "db.cache.key", Z_STRVAL_P(&str_p));
-			} else if (i == 1 && !is_equal(Z_STRVAL_P(&str_p), "connect")) {
-
-			} else if (i == 2 && !is_equal(Z_STRVAL_P(&str_p), "connect")) {
-
+			} else if (i == 1 && is_equal(cmd, "connect")) {
+				if (inet_addr(Z_STRVAL_P(&str_p)) != INADDR_NONE) {
+					set_string_attribute(span->add_attributes(), "net.peer.ip", Z_STRVAL_P(&str_p));
+				} else {
+					set_string_attribute(span->add_attributes(), "net.peer.name", Z_STRVAL_P(&str_p));
+				}
+			} else if (i == 2 && is_equal(cmd, "connect")) {
+				if (!Z_ISUNDEF_P(p)) {
+					set_int64_attribute(span->add_attributes(), "net.peer.port", std::stoi(Z_STRVAL_P(&str_p)));
+				}
 			}
+
 			char *tmp = zend_str_tolower_dup(Z_STRVAL_P(&str_p), Z_STRLEN_P(&str_p));
 			command = command.append(tmp);
 			command = command.append(" ");
