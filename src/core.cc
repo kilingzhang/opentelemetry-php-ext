@@ -274,6 +274,15 @@ void start_tracer(std::string traceparent, std::string tracebaggage, opentelemet
 		std::string request_remote_ip = find_server_string("REMOTE_ADDR", sizeof("REMOTE_ADDR") - 1);
 
 		set_string_attribute(span->add_attributes(), "http.method", request_method);
+
+		//记录POST传参数
+		if (is_equal(request_method, "POST")) {
+			zval *post = get_post_zval();
+			if (post) {
+				set_string_attribute(span->add_attributes(), "http.params", opentelemetry_json_encode(post));
+			}
+		}
+
 		set_string_attribute(span->add_attributes(), "http.host", request_http_host);
 		set_string_attribute(span->add_attributes(), "http.target", request_uri);
 		set_string_attribute(span->add_attributes(), "http.client_ip", request_remote_ip);

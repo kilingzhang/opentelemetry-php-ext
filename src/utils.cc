@@ -231,6 +231,16 @@ zval *find_server_zval(const char *key, size_t len) {
 	return server_value;
 }
 
+zval *get_post_zval() {
+	zend_bool jit_initialization = PG(auto_globals_jit);
+	if (jit_initialization) {
+		zend_string *str = zend_string_init("_POST", sizeof("_POST") - 1, 0);
+		zend_is_auto_global(str);
+		zend_string_release(str);
+	}
+	return zend_hash_str_find(&EG(symbol_table), ZEND_STRL("_POST"));
+}
+
 boost::uuids::uuid generate_span_id() {
 	return boost::uuids::random_generator()();
 }

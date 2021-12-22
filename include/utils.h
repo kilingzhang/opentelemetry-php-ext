@@ -98,6 +98,8 @@ std::string find_server_string(const char *key, size_t len);
 
 zval *find_server_zval(const char *key, size_t len);
 
+zval *get_post_zval();
+
 /**
  *
  * @return
