@@ -174,6 +174,7 @@ ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
   bool enable_mysql;
   bool enable_yar;
   bool enable_collect;
+  bool is_init_consumers;
   char *resource_attributes;
   char *service_name;
   char *service_name_key;

@@ -79,12 +79,20 @@ void exporterOpentelemetry() {
 
 void init_consumers() {
 
+	if (OPENTELEMETRY_G(is_init_consumers)) {
+		return;
+	}
+
 	if (OPENTELEMETRY_G(message_queue_name) == nullptr || is_equal_const(OPENTELEMETRY_G(message_queue_name), "")) {
 		OPENTELEMETRY_G(message_queue_name) = string2char("opentelemetry_" + std::to_string(getpid()));
 	}
 
+	//先清理历史异常数据
 	clean_consumers();
+	//标记已经初始化过消费队列
+	OPENTELEMETRY_G(is_init_consumers) = true;
 
+	//cli模式下
 	if (is_cli_sapi()) {
 		OPENTELEMETRY_G(consumer_nums) = OPENTELEMETRY_G(cli_consumer_nums);
 	}
@@ -143,6 +151,7 @@ void clean_consumers() {
 
 void opentelemetry_module_init() {
 
+	//未开启扩展 或者 cli模式下未开启cli收集
 	if (!is_enabled() || (is_cli_sapi() && !is_cli_enabled())) {
 		return;
 	}
@@ -157,27 +166,34 @@ void opentelemetry_module_init() {
 
 	OPENTELEMETRY_G(ipv4) = get_current_machine_ip(DEFAULT_ETH_INF);
 
+	//cli 模式下  默认不初始化消费队列 消费队列在主动开启收集时初始化
 	if (!is_cli_sapi()) {
 		init_consumers();
 	}
 
+	//注册hook
 	register_zend_hook();
 }
 
 void opentelemetry_module_shutdown() {
 
+	//未开启扩展 或者 cli模式下未开启cli收集
 	if (!is_enabled() || (is_cli_sapi() && !is_cli_enabled())) {
 		return;
 	}
+
+	//开启扩展 cli模式下 开启了cli收集 并且初始化了消费队列
+	if (is_enabled() && is_cli_sapi() && is_cli_enabled() && OPENTELEMETRY_G(is_init_consumers)) {
+		//退出进程前 清理消费队列
+		clean_consumers();
+	}
+	//注销hook
 	unregister_zend_hook();
 	OPENTELEMETRY_G(ipv4).shrink_to_fit();
 }
 
 void opentelemetry_request_init() {
 	if (!is_enabled() || is_cli_sapi()) {
-		if (is_cli_sapi()) {
-			init_consumers();
-		}
 		return;
 	}
 	start_tracer("", "", opentelemetry::proto::trace::v1::Span_SpanKind::Span_SpanKind_SPAN_KIND_SERVER);
@@ -195,9 +211,13 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 		return;
 	}
 
+	//cli 模式下 或者 判断 未初始化 Provider 初始化 Provider 初始化消费队列
+	init_consumers();
 	if (!is_has_provider()) {
 		OPENTELEMETRY_G(provider) = new Provider();
 	}
+
+	init_consumers();
 
 	if (is_has_provider()) {
 		OPENTELEMETRY_G(provider)->clean();

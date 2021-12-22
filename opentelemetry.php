@@ -26,6 +26,7 @@ try{
     curl_exec($ch);
 }catch(Throwable $e){
 }
+echo opentelemetry_get_traceparent() , "\n";
 echo 'ing memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n";
 opentelemetry_shutdown_cli_tracer();
 echo 'after memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n\n";
