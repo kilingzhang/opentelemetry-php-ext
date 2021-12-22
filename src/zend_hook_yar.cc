@@ -29,7 +29,7 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		function_name = std::string(ZSTR_VAL(zf->internal_function.function_name));
 	}
 	name = find_trace_add_scope_name(zf->internal_function.function_name, zf->internal_function.scope,
-									 zf->internal_function.fn_flags);
+	                                 zf->internal_function.fn_flags);
 
 	std::string cmd = function_name;
 	std::transform(function_name.begin(), function_name.end(), cmd.begin(), ::tolower);
@@ -63,8 +63,8 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		array_init(yar_headers);
 		std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(span);
 		add_next_index_string(yar_headers, ("traceparent: " + traceparent).c_str());
-		std::string tracestate = Provider::formatTraceStateHeader();
-		add_next_index_string(yar_headers, ("tracestate: " + tracestate).c_str());
+		std::string baggage = OPENTELEMETRY_G(provider)->formatBaggageHeader();
+		add_next_index_string(yar_headers, ("baggage: " + baggage).c_str());
 		ZVAL_COPY(&params[1], yar_headers);
 
 		zend_call_method(obj, Z_OBJCE_P(self), nullptr, ZEND_STRL("setopt"), nullptr, 2, &params[0], &params[1]);
@@ -158,7 +158,7 @@ void opentelemetry_yar_server_handler(INTERNAL_FUNCTION_PARAMETERS) {
 		function_name = std::string(ZSTR_VAL(zf->internal_function.function_name));
 	}
 	name = find_trace_add_scope_name(zf->internal_function.function_name, zf->internal_function.scope,
-									 zf->internal_function.fn_flags);
+	                                 zf->internal_function.fn_flags);
 
 	std::string cmd = function_name;
 	std::transform(function_name.begin(), function_name.end(), cmd.begin(), ::tolower);
@@ -206,7 +206,7 @@ void register_zend_hook_yar() {
 	zend_function *old_function;
 
 	if ((old_class = OPENTELEMETRY_OLD_CN("yar_client")) != nullptr) {
-		for (const auto &item : clientKeysCommands) {
+		for (const auto &item: clientKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -217,7 +217,7 @@ void register_zend_hook_yar() {
 	}
 
 	if ((old_class = OPENTELEMETRY_OLD_CN("yar_server")) != nullptr) {
-		for (const auto &item : serverKeysCommands) {
+		for (const auto &item: serverKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -232,7 +232,7 @@ void unregister_zend_hook_yar() {
 	zend_class_entry *old_class;
 	zend_function *old_function;
 	if ((old_class = OPENTELEMETRY_OLD_CN("yar_client")) != nullptr) {
-		for (const auto &item : clientKeysCommands) {
+		for (const auto &item: clientKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {
@@ -242,7 +242,7 @@ void unregister_zend_hook_yar() {
 	}
 
 	if ((old_class = OPENTELEMETRY_OLD_CN("yar_server")) != nullptr) {
-		for (const auto &item : serverKeysCommands) {
+		for (const auto &item: serverKeysCommands) {
 			if ((old_function = OPENTELEMETRY_OLD_FN_TABLE(
 				&old_class->function_table, item.c_str())) !=
 				nullptr) {

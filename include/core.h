@@ -43,7 +43,7 @@ void opentelemetry_request_shutdown();
 /**
  *
  */
-void start_tracer(std::string traceparent, std::string tracestate, opentelemetry::proto::trace::v1::Span_SpanKind kind);
+void start_tracer(std::string traceparent, std::string tracebaggage, opentelemetry::proto::trace::v1::Span_SpanKind kind);
 
 /**
  *

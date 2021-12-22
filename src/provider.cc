@@ -173,7 +173,7 @@ void Provider::clean() {
 			delete request;
 			request = nullptr;
 			is_sampled = false;
-			states.clear();
+			baggage.clear();
 			redisException.clear();
 			redisException.shrink_to_fit();
 		}
@@ -187,8 +187,8 @@ void Provider::clean() {
 			delete requests[ppid];
 			requests.erase(ppid);
 		}
-		if (states_map.find(ppid) != states_map.end()) {
-			states_map[ppid].clear();
+		if (baggage_map.find(ppid) != baggage_map.end()) {
+			baggage_map[ppid].clear();
 		}
 		if (redisExceptions.find(ppid) != redisExceptions.end()) {
 			redisExceptions.erase(ppid);
@@ -196,42 +196,25 @@ void Provider::clean() {
 	}
 }
 
-void Provider::addTraceStates(const std::string &key, const std::string &value) {
-	tsl::robin_map<std::string, std::string> traceStates;
-	std::string statesHeader;
+void Provider::addBaggage(const std::string &key, const std::string &value) {
 	if (!is_cli_sapi()) {
-		states[key] = value;
-		traceStates = states;
+		baggage[key] = value;
 	} else {
 		pid_t ppid = get_current_ppid();
-		states_map[ppid][key] = value;
-		traceStates = states_map[ppid];
+		baggage_map[ppid][key] = value;
 	}
 	set_string_attribute(getResource()->add_attributes(), key, value);
-	auto iter = traceStates.begin();
-	bool first = true;
-	while (iter != traceStates.end()) {
-		if (!first) {
-			statesHeader = statesHeader.append(",");
-		}
-		first = false;
-		statesHeader = statesHeader.append(iter->first);
-		statesHeader = statesHeader.append("=");
-		statesHeader = statesHeader.append(iter->second);
-		iter++;
-	}
-	OPENTELEMETRY_G(provider)->firstOneSpan()->set_trace_state(statesHeader);
 }
 
-tsl::robin_map<std::string, std::string> Provider::getTraceStates() {
+tsl::robin_map<std::string, std::string> Provider::getBaggage() {
 	if (!is_cli_sapi()) {
-		return states;
+		return baggage;
 	} else {
 		pid_t ppid = get_current_ppid();
-		if (states_map.find(ppid) == states_map.end()) {
-			states_map[ppid] = tsl::robin_map<std::string, std::string>();
+		if (baggage_map.find(ppid) == baggage_map.end()) {
+			baggage_map[ppid] = tsl::robin_map<std::string, std::string>();
 		}
-		return states_map[ppid];
+		return baggage_map[ppid];
 	}
 }
 
@@ -253,12 +236,12 @@ void Provider::parseTraceParent(const std::string &traceparent) {
 	}
 }
 
-void Provider::parseTraceState(const std::string &tracestate) {
-	if (!tracestate.empty()) {
-		for (const auto &item: explode(",", tracestate)) {
+void Provider::parseBaggage(const std::string &tracebaggage) {
+	if (!tracebaggage.empty()) {
+		for (const auto &item: explode(",", tracebaggage)) {
 			std::vector<std::string> kv = explode("=", item);
 			if (kv.size() == 2) {
-				addTraceStates(kv[0], kv[1]);
+				addBaggage(kv[0], kv[1]);
 			}
 		}
 	}
@@ -268,8 +251,28 @@ std::string Provider::formatTraceParentHeader(Span *span) {
 	return "00-" + traceId(*span) + "-" + spanId(*span) + "-" + (isSampled() ? "01" : "00");
 }
 
-std::string Provider::formatTraceStateHeader() {
-	return OPENTELEMETRY_G(provider)->firstOneSpan()->trace_state();
+std::string Provider::formatBaggageHeader() {
+	tsl::robin_map<std::string, std::string> baggageValue;
+	std::string baggageHeader;
+	if (!is_cli_sapi()) {
+		baggageValue = baggage;
+	} else {
+		pid_t ppid = get_current_ppid();
+		baggageValue = baggage_map[ppid];
+	}
+	auto iter = baggageValue.begin();
+	bool first = true;
+	while (iter != baggageValue.end()) {
+		if (!first) {
+			baggageHeader = baggageHeader.append(",");
+		}
+		first = false;
+		baggageHeader = baggageHeader.append(iter->first);
+		baggageHeader = baggageHeader.append("=");
+		baggageHeader = baggageHeader.append(iter->second);
+		iter++;
+	}
+	return baggageHeader;
 }
 
 void Provider::okEnd(Span *span) {

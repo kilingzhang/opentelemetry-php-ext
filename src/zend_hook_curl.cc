@@ -99,13 +99,13 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
 		std::string traceparent = OPENTELEMETRY_G(provider)->formatTraceParentHeader(span);
 		add_next_index_string(option, ("traceparent: " + traceparent).c_str());
-		std::string tracestate = Provider::formatTraceStateHeader();
-		add_next_index_string(option, ("tracestate: " + tracestate).c_str());
+		std::string baggage = OPENTELEMETRY_G(provider)->formatBaggageHeader();
+		add_next_index_string(option, ("baggage: " + baggage).c_str());
 
-//    set_string_attribute(span->add_attributes(), "http.header", opentelemetry_json_encode(option));
+		set_string_attribute(span->add_attributes(), "http.header", opentelemetry_json_encode(option));
 
 		traceparent.shrink_to_fit();
-		tracestate.shrink_to_fit();
+		baggage.shrink_to_fit();
 
 		zval argv[3];
 		zval ret;

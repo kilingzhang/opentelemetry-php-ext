@@ -43,15 +43,15 @@ class Provider {
 
   void clean();
 
-  void addTraceStates(const std::string &key, const std::string &value);
+  void addBaggage(const std::string &key, const std::string &value);
 
-  tsl::robin_map<std::string, std::string> getTraceStates();
+  tsl::robin_map<std::string, std::string> getBaggage();
 
   void parseTraceParent(const std::string &traceparent);
-  void parseTraceState(const std::string &tracestate);
+  void parseBaggage(const std::string &tracebaggage);
 
   std::string formatTraceParentHeader(opentelemetry::proto::trace::v1::Span *span);
-  static std::string formatTraceStateHeader();
+  std::string formatBaggageHeader();
 
   static void okEnd(opentelemetry::proto::trace::v1::Span *span);
   static void errorEnd(opentelemetry::proto::trace::v1::Span *span, const std::string &message);
@@ -72,8 +72,8 @@ class Provider {
   tsl::robin_map<pid_t, bool> sampled_map;
   tsl::robin_map<pid_t, std::string> redisExceptions;
   std::string redisException;
-  tsl::robin_map<std::string, std::string> states;
-  tsl::robin_map<pid_t, tsl::robin_map<std::string, std::string>> states_map;
+  tsl::robin_map<std::string, std::string> baggage;
+  tsl::robin_map<pid_t, tsl::robin_map<std::string, std::string>> baggage_map;
 };
 
 #endif //OPENTELEMETRY_TRACING_H

@@ -13,9 +13,9 @@ PHP_FUNCTION (opentelemetry_shutdown_cli_tracer);
 
 PHP_FUNCTION (opentelemetry_get_traceparent);
 
-PHP_FUNCTION (opentelemetry_get_tracestate);
+PHP_FUNCTION (opentelemetry_get_baggage);
 
-PHP_FUNCTION (opentelemetry_add_tracestate);
+PHP_FUNCTION (opentelemetry_add_baggage);
 
 PHP_FUNCTION (opentelemetry_set_sample_ratio_based);
 

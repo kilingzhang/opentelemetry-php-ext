@@ -206,7 +206,7 @@ void opentelemetry_request_shutdown() {
 	shutdown_tracer();
 }
 
-void start_tracer(std::string traceparent, std::string tracestate, opentelemetry::proto::trace::v1::Span_SpanKind kind) {
+void start_tracer(std::string traceparent, std::string tracebaggage, opentelemetry::proto::trace::v1::Span_SpanKind kind) {
 	if ((is_cli_sapi() && !is_cli_enabled()) || (is_cli_sapi() && is_cli_enabled() && !is_started_cli_tracer())) {
 		return;
 	}
@@ -216,8 +216,6 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 	if (!is_has_provider()) {
 		OPENTELEMETRY_G(provider) = new Provider();
 	}
-
-	init_consumers();
 
 	if (is_has_provider()) {
 		OPENTELEMETRY_G(provider)->clean();
@@ -248,7 +246,7 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 		}
 		auto span = OPENTELEMETRY_G(provider)->createFirstSpan(uri, kind);
 		OPENTELEMETRY_G(provider)->parseTraceParent(traceparent);
-		OPENTELEMETRY_G(provider)->parseTraceState(tracestate);
+		OPENTELEMETRY_G(provider)->parseBaggage(tracebaggage);
 		set_string_attribute(span->add_attributes(), "process.executable.name", uri);
 		set_string_attribute(span->add_attributes(), "process.command_args", opentelemetry_json_encode(&copy_value));
 		set_string_attribute(span->add_attributes(), "process.pid", std::to_string(getpid()));
@@ -264,10 +262,10 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 			uri = request_uri;
 		}
 		traceparent = find_server_string("HTTP_TRACEPARENT", sizeof("HTTP_TRACEPARENT") - 1);
-		tracestate = find_server_string("HTTP_TRACESTATE", sizeof("HTTP_TRACESTATE") - 1);
+		tracebaggage = find_server_string("HTTP_BAGGAGE", sizeof("HTTP_BAGGAGE") - 1);
 		auto span = OPENTELEMETRY_G(provider)->createFirstSpan(uri, kind);
 		OPENTELEMETRY_G(provider)->parseTraceParent(traceparent);
-		OPENTELEMETRY_G(provider)->parseTraceState(tracestate);
+		OPENTELEMETRY_G(provider)->parseBaggage(tracebaggage);
 		std::string request_method = find_server_string("REQUEST_METHOD", sizeof("REQUEST_METHOD") - 1);
 		std::string request_query = find_server_string("QUERY_STRING", sizeof("QUERY_STRING") - 1);
 		std::string request_http_host = find_server_string("HTTP_HOST", sizeof("HTTP_HOST") - 1);
@@ -292,7 +290,7 @@ void start_tracer(std::string traceparent, std::string tracestate, opentelemetry
 	}
 	uri.shrink_to_fit();
 	traceparent.shrink_to_fit();
-	tracestate.shrink_to_fit();
+	tracebaggage.shrink_to_fit();
 
 }
 

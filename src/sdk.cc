@@ -28,23 +28,23 @@ PHP_FUNCTION (opentelemetry_start_cli_tracer) {
 
 	char *traceparent = nullptr;
 	size_t traceparent_len;
-	char *tracestate = nullptr;
-	size_t tracestate_len;
+	char *baggage = nullptr;
+	size_t baggage_len;
 	long kind = 0;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ssl",
-	                          &traceparent, &traceparent_len, &tracestate, &tracestate_len, &kind) == FAILURE) {
+	                          &traceparent, &traceparent_len, &baggage, &baggage_len, &kind) == FAILURE) {
 		RETURN_FALSE;
 	}
 
 	OPENTELEMETRY_G(is_started_cli_tracer) = true;
 
-	if (traceparent && tracestate) {
-		start_tracer(traceparent, tracestate, (Span_SpanKind) kind);
-	} else if (traceparent && !tracestate) {
+	if (traceparent && baggage) {
+		start_tracer(traceparent, baggage, (Span_SpanKind) kind);
+	} else if (traceparent && !baggage) {
 		start_tracer(traceparent, "", (Span_SpanKind) kind);
-	} else if (!traceparent && tracestate) {
-		start_tracer("", tracestate, (Span_SpanKind) kind);
+	} else if (!traceparent && baggage) {
+		start_tracer("", baggage, (Span_SpanKind) kind);
 	} else {
 		start_tracer("", "", (Span_SpanKind) kind);
 	}
@@ -85,15 +85,15 @@ PHP_FUNCTION (opentelemetry_get_traceparent) {
  * @param execute_data
  * @param return_value
  */
-PHP_FUNCTION (opentelemetry_get_tracestate) {
+PHP_FUNCTION (opentelemetry_get_baggage) {
 	if (is_has_provider()) {
-		std::string tracestate = Provider::formatTraceStateHeader();
-		RETURN_STRING(string2char(tracestate));
+		std::string baggage = OPENTELEMETRY_G(provider)->formatBaggageHeader();
+		RETURN_STRING(string2char(baggage));
 	}
 	RETURN_STRING("");
 }
 
-PHP_FUNCTION (opentelemetry_add_tracestate) {
+PHP_FUNCTION (opentelemetry_add_baggage) {
 
 	if (is_has_provider()) {
 		char *key = nullptr;
@@ -106,7 +106,7 @@ PHP_FUNCTION (opentelemetry_add_tracestate) {
 			RETURN_FALSE;
 		}
 
-		OPENTELEMETRY_G(provider)->addTraceStates(key, value);
+		OPENTELEMETRY_G(provider)->addBaggage(key, value);
 
 		RETURN_TRUE;
 	}
