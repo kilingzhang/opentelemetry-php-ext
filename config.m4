@@ -13,7 +13,7 @@ AX_CHECK_COMPILE_FLAG([-std=c++0x], , [AC_MSG_ERROR([compiler not accept c++11])
 AC_LANG_POP()
 
 PHP_REQUIRE_CXX()
-CXXFLAGS="-g -O2 $CXXFLAGS -g -O2 -std=c++11 -Wno-maybe-uninitialized -Wno-unused-variable -Wno-sign-compare -Wno-invalid-offsetof -Wall -Wno-unused-function -Wno-deprecated -Wno-deprecated-declarations"
+CXXFLAGS="-g -O2 $CXXFLAGS -g -O2 -std=c++11 -mno-outline-atomics -Wno-maybe-uninitialized -Wno-unused-variable -Wno-sign-compare -Wno-invalid-offsetof -Wall -Wno-unused-function -Wno-deprecated -Wno-deprecated-declarations"
 
 
 dnl check for php json
