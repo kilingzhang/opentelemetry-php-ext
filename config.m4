@@ -6,6 +6,8 @@ if test "$PHP_THREAD_SAFETY" == "yes"; then
   AC_MSG_ERROR([opentelemetry does not support ZTS])
 fi
 
+AC_MSG_RESULT([cpu in $host_cpu])
+
 AC_DEFINE([OPENTELEMETRY_DEBUG], 1, [Whether debug is enabled])
 
 AC_LANG_PUSH(C++)
@@ -13,7 +15,12 @@ AX_CHECK_COMPILE_FLAG([-std=c++0x], , [AC_MSG_ERROR([compiler not accept c++11])
 AC_LANG_POP()
 
 PHP_REQUIRE_CXX()
-CXXFLAGS="-g -O2 $CXXFLAGS -g -O2 -std=c++11 -mno-outline-atomics -Wno-maybe-uninitialized -Wno-unused-variable -Wno-sign-compare -Wno-invalid-offsetof -Wall -Wno-unused-function -Wno-deprecated -Wno-deprecated-declarations"
+
+CXXFLAGS="-g -O2 $CXXFLAGS -g -O2 -std=c++11 -Wno-maybe-uninitialized -Wno-unused-variable -Wno-sign-compare -Wno-invalid-offsetof -Wall -Wno-unused-function -Wno-deprecated -Wno-deprecated-declarations"
+
+if test "$host_cpu" = "aarch64"; then
+    CXXFLAGS="$CXXFLAGS -mno-outline-atomics"
+fi
 
 
 dnl check for php json
