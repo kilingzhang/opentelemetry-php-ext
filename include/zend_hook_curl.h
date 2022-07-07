@@ -29,4 +29,4 @@ void register_zend_hook_curl();
 
 void unregister_zend_hook_curl();
 
-#endif //OPENTELEMETRY_ZEND_HOOK_CURL_H
+#endif  // OPENTELEMETRY_ZEND_HOOK_CURL_H
