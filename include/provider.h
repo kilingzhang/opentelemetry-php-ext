@@ -13,67 +13,70 @@
 #include "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 
 class Provider {
- public:
-  Provider();
+  public:
+    Provider();
 
-  ~Provider();
+    ~Provider();
 
-  opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *getRequest();
+    opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *getRequest();
 
-  opentelemetry::proto::resource::v1::Resource *getResource();
+    opentelemetry::proto::resource::v1::Resource *getResource();
 
-  opentelemetry::proto::trace::v1::ResourceSpans *getTracer();
+    opentelemetry::proto::trace::v1::ResourceSpans *getTracer();
 
-  opentelemetry::proto::trace::v1::Span *createFirstSpan(const std::string &name, opentelemetry::proto::trace::v1::Span_SpanKind kind);
+    opentelemetry::proto::trace::v1::Span *createFirstSpan(const std::string &name,
+                                                           opentelemetry::proto::trace::v1::Span_SpanKind kind);
 
-  opentelemetry::proto::trace::v1::Span *createSpan(const std::string &name, opentelemetry::proto::trace::v1::Span_SpanKind kind);
+    opentelemetry::proto::trace::v1::Span *createSpan(const std::string &name,
+                                                      opentelemetry::proto::trace::v1::Span_SpanKind kind);
 
-  opentelemetry::proto::trace::v1::Span *firstOneSpan();
+    opentelemetry::proto::trace::v1::Span *firstOneSpan();
 
-  opentelemetry::proto::trace::v1::Span latestSpan();
+    opentelemetry::proto::trace::v1::Span latestSpan();
 
-  std::string getRedisException();
-  void setRedisException(const std::string &message);
-  void clearRedisException();
-  bool isRedisException();
+    std::string getRedisException();
+    void setRedisException(const std::string &message);
+    void clearRedisException();
+    bool isRedisException();
 
-  bool isSampled();
+    bool isSampled();
 
-  void setSampled(bool isSampled);
+    void setSampled(bool isSampled);
 
-  void clean();
+    void clean();
 
-  void addBaggage(const std::string &key, const std::string &value);
+    void addBaggage(const std::string &key, const std::string &value);
 
-  tsl::robin_map<std::string, std::string> getBaggage();
+    tsl::robin_map<std::string, std::string> getBaggage();
 
-  void parseTraceParent(const std::string &traceparent);
-  void parseBaggage(const std::string &tracebaggage);
+    void parseTraceParent(const std::string &traceparent);
+    void parseBaggage(const std::string &tracebaggage);
 
-  std::string formatTraceParentHeader(opentelemetry::proto::trace::v1::Span *span);
-  std::string formatBaggageHeader();
+    std::string formatTraceParentHeader(opentelemetry::proto::trace::v1::Span *span);
+    std::string formatBaggageHeader();
 
-  static void okEnd(opentelemetry::proto::trace::v1::Span *span);
-  static void errorEnd(opentelemetry::proto::trace::v1::Span *span, const std::string &message);
+    static void okEnd(opentelemetry::proto::trace::v1::Span *span);
+    static void errorEnd(opentelemetry::proto::trace::v1::Span *span, const std::string &message);
 
-  void increase();
-  long count() const;
- private:
-  long counter = 0;
-  opentelemetry::proto::trace::v1::ResourceSpans *resourceSpan = nullptr;
-  opentelemetry::proto::resource::v1::Resource *resource = nullptr;
-  tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::ResourceSpans *> resourceSpans;
-  tsl::robin_map<pid_t, opentelemetry::proto::resource::v1::Resource *> resources;
-  opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request = nullptr;
-  tsl::robin_map<pid_t, opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *> requests;
-  opentelemetry::proto::trace::v1::Span *firstSpan = nullptr;
-  tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::Span *> firstSpans;
-  bool is_sampled = false;
-  tsl::robin_map<pid_t, bool> sampled_map;
-  tsl::robin_map<pid_t, std::string> redisExceptions;
-  std::string redisException;
-  tsl::robin_map<std::string, std::string> baggage;
-  tsl::robin_map<pid_t, tsl::robin_map<std::string, std::string>> baggage_map;
+    void increase();
+    long count() const;
+
+  private:
+    long counter = 0;
+    opentelemetry::proto::trace::v1::ResourceSpans *resourceSpan = nullptr;
+    opentelemetry::proto::resource::v1::Resource *resource = nullptr;
+    tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::ResourceSpans *> resourceSpans;
+    tsl::robin_map<pid_t, opentelemetry::proto::resource::v1::Resource *> resources;
+    opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request = nullptr;
+    tsl::robin_map<pid_t, opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *> requests;
+    opentelemetry::proto::trace::v1::Span *firstSpan = nullptr;
+    tsl::robin_map<pid_t, opentelemetry::proto::trace::v1::Span *> firstSpans;
+    bool is_sampled = false;
+    tsl::robin_map<pid_t, bool> sampled_map;
+    tsl::robin_map<pid_t, std::string> redisExceptions;
+    std::string redisException;
+    tsl::robin_map<std::string, std::string> baggage;
+    tsl::robin_map<pid_t, tsl::robin_map<std::string, std::string>> baggage_map;
 };
 
-#endif //OPENTELEMETRY_TRACING_H
+#endif  // OPENTELEMETRY_TRACING_H

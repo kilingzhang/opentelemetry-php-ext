@@ -27,7 +27,7 @@ using namespace opentelemetry::proto::common::v1;
  * @param message
  */
 void log(const std::string &message);
-
+void debug(const std::string &message);
 bool is_receiver_udp();
 
 bool is_receiver_grpc();
@@ -207,4 +207,4 @@ void set_bool_attribute(KeyValue *attribute, const std::string &key, bool value)
 std::string traceId(const Span &span);
 
 std::string spanId(const Span &span);
-#endif //OPENTELEMETRY_UTILS_H
+#endif  // OPENTELEMETRY_UTILS_H

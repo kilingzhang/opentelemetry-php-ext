@@ -13,58 +13,62 @@
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
 class OtelExporter {
- private:
+  private:
+    std::string receiver_type;
 
-  std::string receiver_type;
+    // Out of the passed in Channel comes the stub, stored here, our view of the
+    // server's exposed services.
+    std::unique_ptr<opentelemetry::proto::collector::trace::v1::TraceService::Stub> stub_;
+    // The producer-consumer queue we use to communicate asynchronously with the
+    // gRPC runtime.
+    grpc::CompletionQueue cq_;
 
-  // Out of the passed in Channel comes the stub, stored here, our view of the
-  // server's exposed services.
-  std::unique_ptr<opentelemetry::proto::collector::trace::v1::TraceService::Stub> stub_;
-  // The producer-consumer queue we use to communicate asynchronously with the
-  // gRPC runtime.
-  grpc::CompletionQueue cq_;
+    // struct for keeping state and data information
+    struct AsyncClientCall {
+        // Container for the data we expect from the server.
+        opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse response;
 
-  // struct for keeping state and data information
-  struct AsyncClientCall {
-	// Container for the data we expect from the server.
-	opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse response;
+        // Context for the client. It could be used to convey extra information to
+        // the server and/or tweak certain RPC behaviors.
+        grpc::ClientContext context;
 
-	// Context for the client. It could be used to convey extra information to
-	// the server and/or tweak certain RPC behaviors.
-	grpc::ClientContext context;
+        // Storage for the status of the RPC upon completion.
+        grpc::Status status;
 
-	// Storage for the status of the RPC upon completion.
-	grpc::Status status;
+        std::unique_ptr<
+            grpc::ClientAsyncResponseReader<opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse>>
+            response_reader;
+    };
 
-	std::unique_ptr<grpc::ClientAsyncResponseReader<opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse>> response_reader;
-  };
- public:
-  int sock_fd = -1;
-  struct sockaddr_in *addr_in{};
-  const char *addr_ip = nullptr;
-  int addr_port = 0;
-  struct addrinfo *addr_info{};
-  struct addrinfo *current_addr_info{};
-  explicit OtelExporter(const char *type);
-  ~OtelExporter();
+  public:
+    int sock_fd = -1;
+    struct sockaddr_in *addr_in{};
+    const char *addr_ip = nullptr;
+    int addr_port = 0;
+    struct addrinfo *addr_info{};
+    struct addrinfo *current_addr_info{};
+    explicit OtelExporter(const char *type);
+    ~OtelExporter();
 
-  void initGRPC(const std::shared_ptr<grpc::ChannelInterface> &channel);
+    void initGRPC(const std::shared_ptr<grpc::ChannelInterface> &channel);
 
-  void initUDP(const char *ip, int port);
+    void initUDP(const char *ip, int port);
 
-  bool isReceiverUDP();
+    bool isReceiverUDP();
 
-  bool isReceiverGRPC();
+    bool isReceiverGRPC();
 
-  void sendAsyncTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request, long long int milliseconds);
+    void sendAsyncTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request,
+                         long long int milliseconds);
 
-  void sendTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request, long long int milliseconds);
+    void sendTracer(opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest *request,
+                    long long int milliseconds);
 
-  // Loop while listening for completed responses.
-  // Prints out the response from the server.
-  void AsyncCompleteRpc();
-  void resolveUDPAddr(int reTry);
-  void sendTracerByUDP(const std::string &data);
+    // Loop while listening for completed responses.
+    // Prints out the response from the server.
+    void AsyncCompleteRpc();
+    void resolveUDPAddr(int reTry);
+    void sendTracerByUDP(const std::string &data);
 };
 
-#endif //OPENTELEMETRY_SRC_OTEL_EXPORTER_H_
+#endif  // OPENTELEMETRY_SRC_OTEL_EXPORTER_H_

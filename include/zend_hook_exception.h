@@ -21,4 +21,4 @@ void opentelemetry_throw_exception_hook(zend_object *ex);
 
 #endif
 
-#endif //OPENTELEMETRY_ZEND_HOOK_EXCEPTION_H
+#endif  // OPENTELEMETRY_ZEND_HOOK_EXCEPTION_H

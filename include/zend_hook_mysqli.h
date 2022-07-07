@@ -18,4 +18,4 @@ void register_zend_hook_mysqli();
 
 void unregister_zend_hook_mysqli();
 
-#endif //OPENTELEMETRY_ZEND_HOOK_MYSQLI_H
+#endif  // OPENTELEMETRY_ZEND_HOOK_MYSQLI_H

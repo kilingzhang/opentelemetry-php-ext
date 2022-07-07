@@ -12,7 +12,7 @@
  *
  * @param request
  */
-void exporterOpentelemetry();
+void exporterOpenTelemetry();
 
 void init_consumers();
 
@@ -43,11 +43,13 @@ void opentelemetry_request_shutdown();
 /**
  *
  */
-void start_tracer(std::string traceparent, std::string tracebaggage, opentelemetry::proto::trace::v1::Span_SpanKind kind);
+void start_tracer(std::string traceparent,
+                  std::string tracebaggage,
+                  opentelemetry::proto::trace::v1::Span_SpanKind kind);
 
 /**
  *
  */
 void shutdown_tracer();
 
-#endif //OPENTELEMETRY_CORE_H
+#endif  // OPENTELEMETRY_CORE_H

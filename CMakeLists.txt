@@ -58,7 +58,6 @@ include_directories(/usr/local/include)
 
 find_package(protobuf CONFIG REQUIRED)
 find_package(grpc CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
 
 # lib-opentelemetry
 link_directories(${LIBRARY_OUTPUT_PATH})

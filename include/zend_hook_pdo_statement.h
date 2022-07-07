@@ -10,7 +10,8 @@
 
 #include "tsl/robin_map.h"
 
-static tsl::robin_map<std::string, void (*)(INTERNAL_FUNCTION_PARAMETERS)> opentelemetry_pdo_statement_original_handler_map;
+static tsl::robin_map<std::string, void (*)(INTERNAL_FUNCTION_PARAMETERS)>
+    opentelemetry_pdo_statement_original_handler_map;
 
 void opentelemetry_pdo_statement_handler(INTERNAL_FUNCTION_PARAMETERS);
 
@@ -18,4 +19,4 @@ void register_zend_hook_pdo_statement();
 
 void unregister_zend_hook_pdo_statement();
 
-#endif //OPENTELEMETRY_ZEND_HOOK_PDO_STATEMENT_H
+#endif  // OPENTELEMETRY_ZEND_HOOK_PDO_STATEMENT_H

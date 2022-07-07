@@ -11,4 +11,4 @@ void register_zend_hook_error();
 
 void unregister_zend_hook_error();
 
-#endif //OPENTELEMETRY_ZEND_HOOK_ERROR_H
+#endif  // OPENTELEMETRY_ZEND_HOOK_ERROR_H

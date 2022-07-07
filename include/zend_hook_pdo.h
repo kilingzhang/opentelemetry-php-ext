@@ -18,4 +18,4 @@ void register_zend_hook_pdo();
 
 void unregister_zend_hook_pdo();
 
-#endif //OPENTELEMETRY_ZEND_HOOK_PDO_H
+#endif  // OPENTELEMETRY_ZEND_HOOK_PDO_H
