@@ -18,4 +18,4 @@ void register_zend_hook_memcached();
 
 void unregister_zend_hook_memcached();
 
-#endif //OPENTELEMETRY_ZEND_HOOK_MEMCACHED_H
+#endif  // OPENTELEMETRY_ZEND_HOOK_MEMCACHED_H
