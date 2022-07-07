@@ -16,7 +16,7 @@ AC_LANG_POP()
 
 PHP_REQUIRE_CXX()
 
-CXXFLAGS="-g -O2 $CXXFLAGS -g -O2 -std=c++11 -Wno-maybe-uninitialized -Wno-unused-variable -Wno-sign-compare -Wno-invalid-offsetof -Wall -Wno-unused-function -Wno-deprecated -Wno-deprecated-declarations"
+CXXFLAGS="-g -O0 $CXXFLAGS -g -O0 -std=c++11 -Wno-maybe-uninitialized -Wno-unused-variable -Wno-sign-compare -Wno-invalid-offsetof -Wall -Wno-unused-function -Wno-deprecated -Wno-deprecated-declarations"
 
 if test "$host_cpu" = "aarch64"; then
     CXXFLAGS="$CXXFLAGS -mno-outline-atomics"
