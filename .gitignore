@@ -39,3 +39,4 @@ opentelemetry
 vendor
 composer.json
 composer.lock
+opentelemetry.php
