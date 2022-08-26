@@ -187,6 +187,12 @@ void opentelemetry_module_shutdown() {
     // 注销hook
     unregister_zend_hook();
     OPENTELEMETRY_G(ipv4).shrink_to_fit();
+
+    // debug 专用
+    //    // 用户自定义函数执行器(php脚本定义的类、函数)
+    //    zend_execute_ex = opentelemetry_original_zend_execute_ex;
+    //    // 内部函数执行器(c语言定义的类、函数)
+    //    zend_execute_internal = opentelemetry_original_zend_execute_internal;
 }
 
 void opentelemetry_request_init() {

@@ -81,8 +81,7 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
                     zval server;
                     zval params[1];
                     ZVAL_STRING(&params[0], str.c_str());
-                    zend_call_method_with_1_params(
-                        obj, Z_OBJCE_P(self), nullptr, "getserverbykey", &server, &params[0]);
+                    zend_call_method_with_1_params(obj, Z_OBJCE_P(self), nullptr, "getserverbykey", &server, params);
 
                     if (!Z_ISUNDEF(server) && Z_TYPE(server) == IS_ARRAY) {
                         zval *str_zval;
@@ -105,9 +104,7 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
                         host.shrink_to_fit();
 
                         zval_dtor(str_zval);
-                        efree(str_zval);
-                    }
-                    if (!Z_ISUNDEF(server)) {
+                        //                        efree(str_zval);
                         zval_dtor(&server);
                     }
                 }
@@ -157,9 +154,7 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
             } else {
                 Provider::errorEnd(span, result);
             }
-            if (!Z_ISUNDEF(zval_result)) {
-                zval_dtor(&zval_result);
-            }
+            zval_dtor(&zval_result);
         } else {
             Provider::errorEnd(span, "UN_KNOW");
         }
