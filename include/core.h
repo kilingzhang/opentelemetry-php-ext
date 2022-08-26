@@ -6,6 +6,7 @@
 #define OPENTELEMETRY_CORE_H
 
 #include "php_opentelemetry.h"
+#include "zend_execute.h"
 #include "include/otel_exporter.h"
 
 /**
@@ -51,5 +52,15 @@ void start_tracer(std::string traceparent,
  *
  */
 void shutdown_tracer();
+
+void tiros_trace_execute(zend_bool is_internal, INTERNAL_FUNCTION_PARAMETERS);
+
+static void (*tiros_original_zend_execute_ex)(zend_execute_data *execute_data);
+
+void tiros_trace_execute_ex(zend_execute_data *execute_data TSRMLS_DC);
+
+static void (*tiros_original_zend_execute_internal)(zend_execute_data *execute_data, zval *return_value);
+
+void tiros_trace_execute_internal(INTERNAL_FUNCTION_PARAMETERS);
 
 #endif  // OPENTELEMETRY_CORE_H

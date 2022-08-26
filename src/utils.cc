@@ -37,6 +37,7 @@ void log(const std::string &message) {
     ofs.open(file, std::ofstream::out | std::ios::app);
     ofs << "[opentelemetry] " << message << std::endl;
     ofs.close();
+    //    std::cout << "[opentelemetry] " << message << std::endl;
     file.shrink_to_fit();
 }
 

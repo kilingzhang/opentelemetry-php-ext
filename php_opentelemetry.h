@@ -30,7 +30,7 @@
 #endif
 
 #include "include/provider.h"
-#include  <string>
+#include <string>
 
 OPENTELEMETRY_BEGIN_EXTERN_C()
 
@@ -38,7 +38,7 @@ OPENTELEMETRY_BEGIN_EXTERN_C()
 #include "config.h"
 #endif
 
-//php zend
+// php zend
 #include "php.h"
 #include "php_ini.h"
 #include "main/SAPI.h"
@@ -79,7 +79,7 @@ OPENTELEMETRY_BEGIN_EXTERN_C()
 extern zend_module_entry opentelemetry_module_entry;
 #define phpext_opentelemetry_ptr &opentelemetry_module_entry
 
-#define PHP_OPENTELEMETRY_VERSION "0.2.0" /* Replace with version number for your extension */
+#define PHP_OPENTELEMETRY_VERSION "0.4.0" /* Replace with version number for your extension */
 #define DEFAULT_ETH_INF "eth0"
 #define PHP_OPENTELEMETRY_SERVICE_NAME "opentelemetry"
 #define PHP_OPENTELEMETRY_SERVICE_NAME_KEY "SERVICE_NAME"
@@ -95,40 +95,73 @@ extern zend_module_entry opentelemetry_module_entry;
 #define PHP_OPENTELEMETRY_MAX_TIME_CONSUMING "1000"
 #define PHP_IS_DEBUG OPENTELEMETRY_DEBUG
 
-#define OPENTELEMETRY_START_CLI_TRACER_FUNCTION_NAME  "opentelemetry_start_cli_tracer"
-#define OPENTELEMETRY_SHUTDOWN_CLI_TRACER_FUNCTION_NAME  "opentelemetry_shutdown_cli_tracer"
+#define OPENTELEMETRY_START_CLI_TRACER_FUNCTION_NAME "opentelemetry_start_cli_tracer"
+#define OPENTELEMETRY_SHUTDOWN_CLI_TRACER_FUNCTION_NAME "opentelemetry_shutdown_cli_tracer"
 #define BOOST_UUID_RANDOM_PROVIDER_FORCE_POSIX
 
-#define OPENTELEMETRY_OLD_FN(n) static_cast<zend_function *>(zend_hash_str_find_ptr(CG(function_table), n, sizeof(n) - 1))
+#define OPENTELEMETRY_OLD_FN(n)                                                                                        \
+    static_cast<zend_function *>(zend_hash_str_find_ptr(CG(function_table), n, sizeof(n) - 1))
 #define OPENTELEMETRY_OLD_FN_TABLE(table, n) static_cast<zend_function *>(zend_hash_str_find_ptr(table, n, strlen(n)))
-#define OPENTELEMETRY_OLD_CN(n) static_cast<zend_class_entry *>(zend_hash_str_find_ptr(CG(class_table), n, sizeof(n) - 1))
+#define OPENTELEMETRY_OLD_CN(n)                                                                                        \
+    static_cast<zend_class_entry *>(zend_hash_str_find_ptr(CG(class_table), n, sizeof(n) - 1))
 
-#define REDIS_KEYS "connect|dump|exists|expire|expireat|move|persist|pexpire|pexpireat|pttl|rename|renamenx|sort|ttl|type|append|bitcount|bitfield|decr|decrby|get|getbit|getrange|getset|incr|incrby|incrbyfloat|psetex|set|setbit|setex|setnx|setrange|strlen|bitop|hdel|hexists|hget|hgetall|hincrby|hincrbyfloat|hkeys|hlen|hmget|hmset|hscan|hset|hsetnx|hvals|hstrlen|lindex|linsert|llen|lpop|lpush|lpushx|lrange|lrem|lset|ltrim|rpop|rpush|rpushx|sadd|scard|sismember|smembers|spop|srandmember|srem|sscan|zadd|zcard|zcount|zincrby|zrange|zrangebyscore|zrank|zrem|zremrangebyrank|zremrangebyscore|zrevrange|zrevrangebyscore|zrevrank|zscore|zscan|zrangebylex|zrevrangebylex|zremrangebylex|zlexcount|pfadd|watch|geoadd|geohash|geopos|geodist|georadius|georadiusbymember"
-#define PDOSTATEMENT_KEYS "bindcolumn|bindparam|bindvalue|closecursor|columncount|debugdumpparams|errorcode|errorinfo|execute|fetch|fetchall|fetchcolumn|fetchobject|getattribute|getcolumnMeta|nextrowset|rowcount|setattribute|setfetchmode"
-#define PDO_KEYS "__construct|begintransaction|commit|errorcode|errorinfo|exec|getattribute|getavailabledrivers|intransaction|lastinsertid|prepare|query|quote|rollback|setattribute"
-#define MYSQLI_KEYS "mysqli_affected_rows|mysqli_autocommit|mysqli_change_user|mysqli_character_set_name|mysqli_close|mysqli_commit|mysqli_connect_errno|mysqli_connect_error|mysqli_connect|mysqli_data_seek|mysqli_debug|mysqli_dump_debug_info|mysqli_errno|mysqli_error_list|mysqli_error|mysqli_fetch_all|mysqli_fetch_array|mysqli_fetch_assoc|mysqli_fetch_field_direct|mysqli_fetch_field|mysqli_fetch_fields|mysqli_fetch_lengths|mysqli_fetch_object|mysqli_fetch_row|mysqli_field_count|mysqli_field_seek|mysqli_field_tell|mysqli_free_result|mysqli_get_charset|mysqli_get_client_info|mysqli_get_client_stats|mysqli_get_client_version|mysqli_get_connection_stats|mysqli_get_host_info|mysqli_get_proto_info|mysqli_get_server_info|mysqli_get_server_version|mysqli_info|mysqli_init|mysqli_insert_id|mysql_kill|mysqli_more_results|mysqli_multi_query|mysqli_next_result|mysqli_num_fields|mysqli_num_rows|mysqli_options|mysqli_ping|mysqli_prepare|mysqli_query|mysqli_real_connect|mysqli_real_escape_string|mysqli_real_query|mysqli_reap_async_query|mysqli_refresh|mysqli_rollback|mysqli_select_db|mysqli_set_charset|mysqli_set_local_infile_default|mysqli_set_local_infile_handler|mysqli_sqlstate|mysqli_ssl_set|mysqli_stat|mysqli_stmt_init|mysqli_store_result|mysqli_thread_id|mysqli_thread_safe|mysqli_use_result|mysqli_warning_count"
-#define MEMCACHED_KEY_STRING "set|setbykey|setmulti|setmultibykey|add|addbykey|replace|replacebykey|append|appendbykey|prepend|prependbykey|cas|casbykey|get|getbykey|getmulti|getmultibykey|getallkeys|delete|deletebykey|deletemulti|deletemultibykey|increment|incrementbykey|decrement|decrementbykey"
-#define MEMCACHED_KEYS "set|setbykey|setmulti|setmultibykey|add|addbykey|replace|replacebykey|append|appendbykey|prepend|prependbykey|cas|casbykey|get|getbykey|getmulti|getmultibykey|getallkeys|delete|deletebykey|deletemulti|deletemultibykey|increment|incrementbykey|decrement|decrementbykey|getstats|ispersistent|ispristine|flush|flushbuffers|getdelayed|getdelayedbykey|fetch|fetchall|addserver|addservers|getoption|setoption|setoptions|getresultcode|getserverlist|resetserverlist|getversion|quit|setsaslauthdata|touch|touchbykey"
+#define REDIS_KEYS                                                                                                     \
+    "connect|dump|exists|expire|expireat|move|persist|pexpire|pexpireat|pttl|rename|renamenx|sort|ttl|type|append|"    \
+    "bitcount|bitfield|decr|decrby|get|getbit|getrange|getset|incr|incrby|incrbyfloat|psetex|set|setbit|setex|setnx|"  \
+    "setrange|strlen|bitop|hdel|hexists|hget|hgetall|hincrby|hincrbyfloat|hkeys|hlen|hmget|hmset|hscan|hset|hsetnx|"   \
+    "hvals|hstrlen|lindex|linsert|llen|lpop|lpush|lpushx|lrange|lrem|lset|ltrim|rpop|rpush|rpushx|sadd|scard|"         \
+    "sismember|smembers|spop|srandmember|srem|sscan|zadd|zcard|zcount|zincrby|zrange|zrangebyscore|zrank|zrem|"        \
+    "zremrangebyrank|zremrangebyscore|zrevrange|zrevrangebyscore|zrevrank|zscore|zscan|zrangebylex|zrevrangebylex|"    \
+    "zremrangebylex|zlexcount|pfadd|watch|geoadd|geohash|geopos|geodist|georadius|georadiusbymember"
+#define PDOSTATEMENT_KEYS                                                                                              \
+    "bindcolumn|bindparam|bindvalue|closecursor|columncount|debugdumpparams|errorcode|errorinfo|execute|fetch|"        \
+    "fetchall|fetchcolumn|fetchobject|getattribute|getcolumnMeta|nextrowset|rowcount|setattribute|setfetchmode"
+#define PDO_KEYS                                                                                                       \
+    "__construct|begintransaction|commit|errorcode|errorinfo|exec|getattribute|getavailabledrivers|intransaction|"     \
+    "lastinsertid|prepare|query|quote|rollback|setattribute"
+#define MYSQLI_KEYS                                                                                                    \
+    "mysqli_affected_rows|mysqli_autocommit|mysqli_change_user|mysqli_character_set_name|mysqli_close|mysqli_commit|"  \
+    "mysqli_connect_errno|mysqli_connect_error|mysqli_connect|mysqli_data_seek|mysqli_debug|mysqli_dump_debug_info|"   \
+    "mysqli_errno|mysqli_error_list|mysqli_error|mysqli_fetch_all|mysqli_fetch_array|mysqli_fetch_assoc|mysqli_fetch_" \
+    "field_direct|mysqli_fetch_field|mysqli_fetch_fields|mysqli_fetch_lengths|mysqli_fetch_object|mysqli_fetch_row|"   \
+    "mysqli_field_count|mysqli_field_seek|mysqli_field_tell|mysqli_free_result|mysqli_get_charset|mysqli_get_client_"  \
+    "info|mysqli_get_client_stats|mysqli_get_client_version|mysqli_get_connection_stats|mysqli_get_host_info|mysqli_"  \
+    "get_proto_info|mysqli_get_server_info|mysqli_get_server_version|mysqli_info|mysqli_init|mysqli_insert_id|mysql_"  \
+    "kill|mysqli_more_results|mysqli_multi_query|mysqli_next_result|mysqli_num_fields|mysqli_num_rows|mysqli_options|" \
+    "mysqli_ping|mysqli_prepare|mysqli_query|mysqli_real_connect|mysqli_real_escape_string|mysqli_real_query|mysqli_"  \
+    "reap_async_query|mysqli_refresh|mysqli_rollback|mysqli_select_db|mysqli_set_charset|mysqli_set_local_infile_"     \
+    "default|mysqli_set_local_infile_handler|mysqli_sqlstate|mysqli_ssl_set|mysqli_stat|mysqli_stmt_init|mysqli_"      \
+    "store_result|mysqli_thread_id|mysqli_thread_safe|mysqli_use_result|mysqli_warning_count"
+#define MEMCACHED_KEY_STRING                                                                                           \
+    "set|setbykey|setmulti|setmultibykey|add|addbykey|replace|replacebykey|append|appendbykey|prepend|prependbykey|"   \
+    "cas|casbykey|get|getbykey|getmulti|getmultibykey|getallkeys|delete|deletebykey|deletemulti|deletemultibykey|"     \
+    "increment|incrementbykey|decrement|decrementbykey"
+#define MEMCACHED_KEYS                                                                                                 \
+    "set|setbykey|setmulti|setmultibykey|add|addbykey|replace|replacebykey|append|appendbykey|prepend|prependbykey|"   \
+    "cas|casbykey|get|getbykey|getmulti|getmultibykey|getallkeys|delete|deletebykey|deletemulti|deletemultibykey|"     \
+    "increment|incrementbykey|decrement|decrementbykey|getstats|ispersistent|ispristine|flush|flushbuffers|"           \
+    "getdelayed|getdelayedbykey|fetch|fetchall|addserver|addservers|getoption|setoption|setoptions|getresultcode|"     \
+    "getserverlist|resetserverlist|getversion|quit|setsaslauthdata|touch|touchbykey"
 
 #define YAR_CLIENT_KEYS "__call"
 #define YAR_SERVER_KEYS "__construct"
 
-#define COMPONENTS_KEY  "component"
-#define COMPONENTS_HTTP  "http"
-#define COMPONENTS_REQUEST  "request"
-#define COMPONENTS_PROCESS  "process"
-#define COMPONENTS_ERROR  "error"
-#define COMPONENTS_EXCEPTION  "exception"
-#define COMPONENTS_CURL  "curl"
-#define COMPONENTS_YAR  "yar"
-#define COMPONENTS_YAR_CLIENT  "yar_client"
-#define COMPONENTS_YAR_SERVER  "yar_server"
-#define COMPONENTS_GRPC  "grpc"
-#define COMPONENTS_DB  "db"
-#define COMPONENTS_MYSQL  "mysql"
-#define COMPONENTS_REDIS  "redis"
-#define COMPONENTS_MEMCACHED  "memcached"
-#define COMPONENTS_PREDIS  "predis"
+#define COMPONENTS_KEY "component"
+#define COMPONENTS_HTTP "http"
+#define COMPONENTS_REQUEST "request"
+#define COMPONENTS_PROCESS "process"
+#define COMPONENTS_ERROR "error"
+#define COMPONENTS_EXCEPTION "exception"
+#define COMPONENTS_CURL "curl"
+#define COMPONENTS_YAR "yar"
+#define COMPONENTS_YAR_CLIENT "yar_client"
+#define COMPONENTS_YAR_SERVER "yar_server"
+#define COMPONENTS_GRPC "grpc"
+#define COMPONENTS_DB "db"
+#define COMPONENTS_MYSQL "mysql"
+#define COMPONENTS_REDIS "redis"
+#define COMPONENTS_MEMCACHED "memcached"
+#define COMPONENTS_PREDIS "predis"
 
 #if (defined(unix) || defined(__unix__) || defined(__unix)) && !defined(__APPLE__)
 #define PLATFORM_NAME "unix"
@@ -151,7 +184,7 @@ extern zend_module_entry opentelemetry_module_entry;
 #ifdef PHP_WIN32
 #define PHP_OPENTELEMETRY_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
-#define PHP_OPENTELEMETRY_API __attribute__ ((visibility("default")))
+#define PHP_OPENTELEMETRY_API __attribute__((visibility("default")))
 #else
 #define PHP_OPENTELEMETRY_API
 #endif
@@ -163,41 +196,41 @@ extern zend_module_entry opentelemetry_module_entry;
 OPENTELEMETRY_END_EXTERN_C()
 
 ZEND_BEGIN_MODULE_GLOBALS(opentelemetry)
-  bool enable;
-  bool cli_enable;
-  bool debug;
-  bool enable_exception;
-  bool enable_error;
-  bool enable_curl;
-  bool enable_memcached;
-  bool enable_redis;
-  bool enable_mysql;
-  bool enable_yar;
-  bool enable_collect;
-  bool is_init_consumers;
-  char *resource_attributes;
-  char *service_name;
-  char *service_name_key;
-  char *error_level;
-  int sample_ratio_based;
-  int max_time_consuming;
-  char *log_path;
-  char *receiver_type;
-  char *grpc_endpoint;
-  char *udp_ip;
-  int udp_port;
-  int udp_look_up_time;
-  char *message_queue_name;
-  int max_message_size;
-  int max_queue_length;
-  int consumer_nums;
-  int cli_consumer_nums;
-  int grpc_timeout_milliseconds;
-  Provider *provider;
-  std::string ipv4;
-  zval curl_header;
-  bool is_started_cli_tracer;
-  char hostname[256] = {0};
+bool enable;
+bool cli_enable;
+bool debug;
+bool enable_exception;
+bool enable_error;
+bool enable_curl;
+bool enable_memcached;
+bool enable_redis;
+bool enable_mysql;
+bool enable_yar;
+bool enable_collect;
+bool is_init_consumers;
+char *resource_attributes;
+char *service_name;
+char *service_name_key;
+char *error_level;
+int sample_ratio_based;
+int max_time_consuming;
+char *log_path;
+char *receiver_type;
+char *grpc_endpoint;
+char *udp_ip;
+int udp_port;
+int udp_look_up_time;
+char *message_queue_name;
+int max_message_size;
+int max_queue_length;
+int consumer_nums;
+int cli_consumer_nums;
+int grpc_timeout_milliseconds;
+Provider *provider;
+std::string ipv4;
+zval curl_header;
+bool is_started_cli_tracer;
+char hostname[256] = {0};
 ZEND_END_MODULE_GLOBALS(opentelemetry)
 ZEND_EXTERN_MODULE_GLOBALS(opentelemetry)
 
@@ -206,8 +239,7 @@ ZEND_EXTERN_MODULE_GLOBALS(opentelemetry)
 ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
-#endif    /* PHP_OPENTELEMETRY_H */
-
+#endif /* PHP_OPENTELEMETRY_H */
 
 /*
  * Local variables:

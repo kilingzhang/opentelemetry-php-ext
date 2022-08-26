@@ -78,19 +78,19 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 #else
                     zend_object *obj = Z_OBJ_P(self);
 #endif
-                    zval *server = nullptr;
+                    zval server;
                     zval params[1];
                     ZVAL_STRING(&params[0], str.c_str());
-                    zend_call_method(
-                        obj, Z_OBJCE_P(self), nullptr, ZEND_STRL("getserverbykey"), server, 1, params, nullptr);
+                    zend_call_method_with_1_params(
+                        obj, Z_OBJCE_P(self), nullptr, "getserverbykey", &server, &params[0]);
 
-                    if (server) {
+                    if (!Z_ISUNDEF(server) && Z_TYPE(server) == IS_ARRAY) {
                         zval *str_zval;
-                        long long port = 0;
+                        long long port;
 
-                        str_zval = zend_hash_str_find(Z_ARRVAL_P(server), "host", 4);
+                        str_zval = zend_hash_str_find(Z_ARRVAL(server), "host", 4);
                         std::string host = Z_STRVAL_P(str_zval);
-                        str_zval = zend_hash_str_find(Z_ARRVAL_P(server), "port", 4);
+                        str_zval = zend_hash_str_find(Z_ARRVAL(server), "port", 4);
                         port = Z_LVAL_P(str_zval);
                         set_string_attribute(span->add_attributes(), "net.transport", "IP.TCP");
 
@@ -106,10 +106,9 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
 
                         zval_dtor(str_zval);
                         efree(str_zval);
-                        zval_dtor(server);
-                        efree(server);
-                    } else {
-                        efree(server);
+                    }
+                    if (!Z_ISUNDEF(server)) {
+                        zval_dtor(&server);
                     }
                 }
             }
@@ -139,8 +138,12 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
     if (is_has_provider()) {
         zval *self = &(execute_data->This);
         zval zval_result;
-        zend_call_method(
-            self, Z_OBJCE_P(self), nullptr, ZEND_STRL("getresultmessage"), &zval_result, 0, nullptr, nullptr);
+#if PHP_VERSION_ID < 80000
+        zval *obj = self;
+#else
+        zend_object *obj = Z_OBJ_P(self);
+#endif
+        zend_call_method_with_0_params(obj, Z_OBJCE_P(self), nullptr, "getresultmessage", &zval_result);
         if (!Z_ISUNDEF(zval_result) && Z_TYPE(zval_result) == IS_STRING) {
             std::string result = ZSTR_VAL(Z_STR(zval_result));
             if (is_equal(result, "SUCCESS")) {
@@ -153,6 +156,9 @@ void opentelemetry_memcached_handler(INTERNAL_FUNCTION_PARAMETERS) {
                 Provider::okEnd(span);
             } else {
                 Provider::errorEnd(span, result);
+            }
+            if (!Z_ISUNDEF(zval_result)) {
+                zval_dtor(&zval_result);
             }
         } else {
             Provider::errorEnd(span, "UN_KNOW");

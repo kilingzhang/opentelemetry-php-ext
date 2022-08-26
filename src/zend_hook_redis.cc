@@ -55,8 +55,13 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
             zval *self = &(execute_data->This);
             zval zval_host;
             zval zval_port;
-            zend_call_method(self, Z_OBJCE_P(self), nullptr, ZEND_STRL("gethost"), &zval_host, 0, nullptr, nullptr);
-            zend_call_method(self, Z_OBJCE_P(self), nullptr, ZEND_STRL("getport"), &zval_port, 0, nullptr, nullptr);
+#if PHP_VERSION_ID < 80000
+            zval *obj = self;
+#else
+            zend_object *obj = Z_OBJ_P(self);
+#endif
+            zend_call_method_with_0_params(obj, Z_OBJCE_P(self), nullptr, "gethost", &zval_host);
+            zend_call_method_with_0_params(obj, Z_OBJCE_P(self), nullptr, "getport", &zval_port);
 
             if (!Z_ISUNDEF(zval_host) && !Z_ISUNDEF(zval_port) && Z_TYPE(zval_host) == IS_STRING &&
                 Z_TYPE(zval_port) == IS_LONG) {
@@ -106,7 +111,7 @@ void opentelemetry_redis_handler(INTERNAL_FUNCTION_PARAMETERS) {
                 }
             } else if (i == 2 && is_equal(cmd, "connect")) {
                 if (!Z_ISUNDEF_P(p)) {
-                    set_int64_attribute(span->add_attributes(), "net.peer.port", std::stoi(Z_STRVAL_P(&str_p)));
+                    set_int64_attribute(span->add_attributes(), "net.peer.port", std::stoll(Z_STRVAL_P(&str_p)));
                 }
             }
 

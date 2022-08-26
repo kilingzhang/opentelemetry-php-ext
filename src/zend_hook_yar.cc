@@ -65,7 +65,7 @@ void opentelemetry_yar_client_handler(INTERNAL_FUNCTION_PARAMETERS) {
         add_next_index_string(yar_headers, ("baggage: " + baggage).c_str());
         ZVAL_COPY(&params[1], yar_headers);
 
-        zend_call_method(obj, Z_OBJCE_P(self), nullptr, ZEND_STRL("setopt"), nullptr, 2, &params[0], &params[1]);
+        zend_call_method_with_2_params(obj, Z_OBJCE_P(self), nullptr, "setopt", nullptr, &params[0], &params[1]);
         zval_dtor(&params[0]);
         zval_dtor(&params[1]);
         zval_dtor(yar_headers);

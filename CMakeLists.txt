@@ -18,15 +18,15 @@ set(CMAKE_USE_PTHREADS_INIT 1)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 if (APPLE)
-  set(CMAKE_SHARED_LINKER_FLAGS "-undefined dynamic_lookup")
+    set(CMAKE_SHARED_LINKER_FLAGS "-undefined dynamic_lookup")
 else ()
-  list(APPEND OPENTELEMETRY_LINK_LIBRARIES rt crypt)
+    list(APPEND OPENTELEMETRY_LINK_LIBRARIES rt crypt)
 endif ()
 
 SET(CMAKE_BUILD_TYPE Debug)
 
 file(GLOB_RECURSE SRC_LIST FOLLOW_SYMLINKS src/*.c src/*.cc
-    )
+        )
 file(GLOB_RECURSE HEAD_FILES FOLLOW_SYMLINKS config.h include/*.h)
 
 #add_definitions(-DHAVE_CONFIG_H)
@@ -41,8 +41,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PHP_INCLUDES}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PHP_INCLUDES}")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  execute_process(COMMAND ldconfig -p OUTPUT_VARIABLE LDCONFIG_LIST OUTPUT_STRIP_TRAILING_WHITESPACE)
-  #message(STATUS LDCONFIG_LIST)
+    execute_process(COMMAND ldconfig -p OUTPUT_VARIABLE LDCONFIG_LIST OUTPUT_STRIP_TRAILING_WHITESPACE)
+    #message(STATUS LDCONFIG_LIST)
 endif ()
 
 #引入php需要的扩展源码，这里也是根据自己需要的来更改
@@ -56,7 +56,7 @@ include_directories(${PHP_SOURCE}/TSRM)
 include_directories(third_party/robin-map/include)
 include_directories(/usr/local/include)
 
-find_package(protobuf CONFIG REQUIRED)
+find_package(boost CONFIG REQUIRED)
 find_package(grpc CONFIG REQUIRED)
 
 # lib-opentelemetry
@@ -68,41 +68,41 @@ target_link_libraries(lib-opentelemetry PRIVATE ${OPENTELEMETRY_CPP_LIBRARIES})
 
 # ext-opentelemetry
 set(ext_src_list
-    src/utils.cc
-    include/utils.h
-    php_opentelemetry.h
-    opentelemetry.cc
-    src/provider.cc
-    include/provider.h
-    src/sdk.cc
-    include/sdk.h
-    src/core.cc
-    include/core.h
-    src/zend_hook.cc
-    include/zend_hook.h
-    src/zend_hook_memcached.cc
-    include/zend_hook_memcached.h
-    src/zend_hook_redis.cc
-    include/zend_hook_redis.h
-    src/zend_hook_pdo.cc
-    include/zend_hook_pdo.h
-    src/zend_hook_pdo_statement.cc
-    include/zend_hook_pdo_statement.h
-    src/zend_hook_mysqli.cc
-    include/zend_hook_mysqli.h
-    src/zend_hook_curl.cc
-    include/zend_hook_curl.h
-    src/zend_hook_yar.cc
-    include/zend_hook_yar.h
-    src/zend_hook_error.cc
-    include/zend_hook_error.h
-    src/zend_hook_exception.cc
-    include/zend_hook_exception.h
-    src/otel_exporter.cc
-    include/otel_exporter.h
-    src/hex.cc
-    include/hex.h
-    include/Timer.h src/Timer.cc)
+        src/utils.cc
+        include/utils.h
+        php_opentelemetry.h
+        opentelemetry.cc
+        src/provider.cc
+        include/provider.h
+        src/sdk.cc
+        include/sdk.h
+        src/core.cc
+        include/core.h
+        src/zend_hook.cc
+        include/zend_hook.h
+        src/zend_hook_memcached.cc
+        include/zend_hook_memcached.h
+        src/zend_hook_redis.cc
+        include/zend_hook_redis.h
+        src/zend_hook_pdo.cc
+        include/zend_hook_pdo.h
+        src/zend_hook_pdo_statement.cc
+        include/zend_hook_pdo_statement.h
+        src/zend_hook_mysqli.cc
+        include/zend_hook_mysqli.h
+        src/zend_hook_curl.cc
+        include/zend_hook_curl.h
+        src/zend_hook_yar.cc
+        include/zend_hook_yar.h
+        src/zend_hook_error.cc
+        include/zend_hook_error.h
+        src/zend_hook_exception.cc
+        include/zend_hook_exception.h
+        src/otel_exporter.cc
+        include/otel_exporter.h
+        src/hex.cc
+        include/hex.h
+        include/Timer.h src/Timer.cc)
 add_library(ext-opentelemetry SHARED ${ext_src_list})
 set_target_properties(ext-opentelemetry PROPERTIES PREFIX "")
 set_target_properties(ext-opentelemetry PROPERTIES OUTPUT_NAME "opentelemetry")
@@ -111,4 +111,4 @@ target_include_directories(ext-opentelemetry PRIVATE ${OPENTELEMETRY_CPP_INCLUDE
 target_link_libraries(ext-opentelemetry ${OPENTELEMETRY_C_FLAGS} opentelemetry)
 
 add_custom_target(build.sh
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
