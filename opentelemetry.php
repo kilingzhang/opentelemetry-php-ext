@@ -18,13 +18,24 @@ echo 'before memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n";
 opentelemetry_start_cli_tracer();
 try{
     $redis = new Redis();
-    $redis->connect('127.0.0.1');
-    $redis->set("opentelemetry","opentelemetry");
+    $redis->connect('127.0.0.1',22036);
+    $redis->set("opentelemetry","opentelemetry", 300);
     $redis->get("opentelemetry");
     unset($redis);
+    $mc = new Memcached();
+    $mc->addServers(array(
+        array('127.0.0.1',15013),
+        array('127.0.0.1',15013),
+    ));
+    $mc->set("opentelemetry","opentelemetry",time() + 300);
+    $mc->set("opentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetryopentelemetry","opentelemetry",time() + 300);
+    $mc->get("opentelemetry");
+    var_dump($mc->getServerByKey("opentelemetry"));
+    unset($mc);
     $ch = curl_init("https://api.github.com/repos");
     curl_exec($ch);
 }catch(Throwable $e){
+    echo $e->getMessage() , "\n";
 }
 echo opentelemetry_get_traceparent() , "\n";
 echo 'ing memory : ', memory_get_usage() / 1024 / 1024, 'M', "\n";
