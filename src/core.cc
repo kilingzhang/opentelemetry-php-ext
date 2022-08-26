@@ -165,12 +165,12 @@ void opentelemetry_module_init() {
 
     // debug 专用
     //    // 用户自定义函数执行器(php脚本定义的类、函数)
-    //    tiros_original_zend_execute_ex = zend_execute_ex;
-    //    zend_execute_ex = tiros_trace_execute_ex;
+    //    opentelemetry_original_zend_execute_ex = zend_execute_ex;
+    //    zend_execute_ex = opentelemetry_trace_execute_ex;
     //
     //    // 内部函数执行器(c语言定义的类、函数)
-    //    tiros_original_zend_execute_internal = zend_execute_internal;
-    //    zend_execute_internal = tiros_trace_execute_internal;
+    //    opentelemetry_original_zend_execute_internal = zend_execute_internal;
+    //    zend_execute_internal = opentelemetry_trace_execute_internal;
 }
 
 void opentelemetry_module_shutdown() {
@@ -332,24 +332,24 @@ void shutdown_tracer() {
 /**
  * This method replaces the internal zend_execute_ex method used to dispatch
  * calls to user space code. The original zend_execute_ex method is moved to
- * tiros_original_zend_execute_ex
+ * opentelemetry_original_zend_execute_ex
  */
-void tiros_trace_execute_ex(zend_execute_data *execute_data TSRMLS_DC) {
-    tiros_trace_execute(0, execute_data TSRMLS_CC, NULL);
+void opentelemetry_trace_execute_ex(zend_execute_data *execute_data TSRMLS_DC) {
+    opentelemetry_trace_execute(0, execute_data TSRMLS_CC, NULL);
 }
 
 /**
  * This method resumes the internal function execution.
  */
 static void resume_execute_internal(INTERNAL_FUNCTION_PARAMETERS) {
-    if (tiros_original_zend_execute_internal) {
-        tiros_original_zend_execute_internal(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+    if (opentelemetry_original_zend_execute_internal) {
+        opentelemetry_original_zend_execute_internal(INTERNAL_FUNCTION_PARAM_PASSTHRU);
     } else {
         execute_data->func->internal_function.handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
     }
 }
 
-void tiros_trace_execute(zend_bool is_internal, INTERNAL_FUNCTION_PARAMETERS) {
+void opentelemetry_trace_execute(zend_bool is_internal, INTERNAL_FUNCTION_PARAMETERS) {
     std::string function_name;
     zend_execute_data *caller = EG(current_execute_data);
 
@@ -366,10 +366,10 @@ void tiros_trace_execute(zend_bool is_internal, INTERNAL_FUNCTION_PARAMETERS) {
     if (is_internal) {
         resume_execute_internal(INTERNAL_FUNCTION_PARAM_PASSTHRU);
     } else {
-        tiros_original_zend_execute_ex(execute_data TSRMLS_CC);
+        opentelemetry_original_zend_execute_ex(execute_data TSRMLS_CC);
     }
 }
 
-void tiros_trace_execute_internal(INTERNAL_FUNCTION_PARAMETERS) {
-    tiros_trace_execute(1, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+void opentelemetry_trace_execute_internal(INTERNAL_FUNCTION_PARAMETERS) {
+    opentelemetry_trace_execute(1, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
