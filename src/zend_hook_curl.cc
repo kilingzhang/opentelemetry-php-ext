@@ -210,9 +210,10 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
             zval_dtor(&args[0]);
             zval_dtor(&curl_error);
         } else if (Z_LVAL_P(response_http_code) >= 400) {
-            Provider::errorEnd(span, Z_STR_P(return_value)->val);
+            set_string_attribute(span->add_attributes(), "http.response.body", Z_STRVAL_P(return_value));
+            Provider::errorEnd(span, Z_STRVAL_P(return_value));
         } else if (Z_LVAL_P(response_http_code) == 200) {
-            set_string_attribute(span->add_attributes(), "http.response.body", Z_STR_P(return_value)->val);
+            set_string_attribute(span->add_attributes(), "http.response.body", Z_STRVAL_P(return_value));
         }
 
         zval_dtor(&url_response);
