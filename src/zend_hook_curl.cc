@@ -25,7 +25,6 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
         return;
     }
 
-    debug("opentelemetry_curl_exec_handler");
     zval *zid;
 
 #if PHP_VERSION_ID >= 80000
@@ -165,6 +164,7 @@ void opentelemetry_curl_exec_handler(INTERNAL_FUNCTION_PARAMETERS) {
         response_primary_ip = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("primary_ip"));
         set_string_attribute(span->add_attributes(), "net.peer.ip", Z_STR_P(response_primary_ip)->val);
 
+        set_string_attribute(span->add_attributes(), "http.curl.response", opentelemetry_json_encode(&url_response));
         // 总共的传输时间
         response_total_time = zend_hash_str_find(Z_ARRVAL(url_response), ZEND_STRL("total_time"));
         set_double_attribute(span->add_attributes(), "http.response_total_time", Z_DVAL_P(response_total_time));

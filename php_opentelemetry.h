@@ -79,7 +79,7 @@ OPENTELEMETRY_BEGIN_EXTERN_C()
 extern zend_module_entry opentelemetry_module_entry;
 #define phpext_opentelemetry_ptr &opentelemetry_module_entry
 
-#define PHP_OPENTELEMETRY_VERSION "0.5.0" /* Replace with version number for your extension */
+#define PHP_OPENTELEMETRY_VERSION "0.5.1" /* Replace with version number for your extension */
 #define DEFAULT_ETH_INF "eth0"
 #define PHP_OPENTELEMETRY_SERVICE_NAME "opentelemetry"
 #define PHP_OPENTELEMETRY_SERVICE_NAME_KEY "SERVICE_NAME"
